@@ -95,8 +95,15 @@ function AdminLogin() {
       setFactor(verified)
       return
     }
+    // Bersihkan faktor sisa yang belum pernah diverifikasi, kalau tidak Supabase
+    // menolak enroll baru dengan 422 (Unprocessable Content).
+    await Promise.all(
+      (data?.totp ?? [])
+        .filter((item) => item.status !== 'verified')
+        .map((item) => supabase.auth.mfa.unenroll({ factorId: item.id })),
+    )
     const { data: enrolled, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Purwakarta Admin' })
-    if (error) return setMessage('MFA belum dapat disiapkan.')
+    if (error) return setMessage('MFA belum dapat disiapkan — coba muat ulang halaman.')
     setFactor(enrolled)
     setQr(enrolled.totp.uri)
   }
