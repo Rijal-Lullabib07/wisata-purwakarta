@@ -10,6 +10,7 @@ import Kontak from "./pages/Kontak";
 import AdminLogin from "./pages/AdminLogin";
 import AdminRoute from "./components/AdminRoute";
 import NotFound from "./components/NotFound";
+import DecoyStatistik from "./components/DecoyStatistik";
 import "./App.css";
 
 // Dashboard dimuat lazy supaya bundle recharts tidak membebani halaman publik.
@@ -41,6 +42,10 @@ function App() {
           <Route path="/" element={<Beranda />} />
           <Route path="/destinasi" element={<Destinasi />} />
           <Route path="/destinasi/:slug" element={<DestinasiDetail />} />
+          <Route
+            path="/statistik"
+            element={<DecoyStatistik />}
+          />
           <Route
             path="/panel-kj29xz/statistik"
             element={
