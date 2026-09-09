@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase, isSupabaseReady } from "../lib/supabase";
+import NotFound from "./NotFound";
 
 const IDLE_LIMIT = 15 * 60 * 1000;
 
@@ -58,14 +59,6 @@ function AdminRoute({ children }) {
     );
   if (state !== "allowed") return <NotFound />;
   return children;
-}
-
-function NotFound() {
-  return (
-    <section className="page-section empty-state" style={{ paddingTop: 160 }}>
-      <h2>404 Not Found</h2>
-    </section>
-  );
 }
 
 export default AdminRoute;

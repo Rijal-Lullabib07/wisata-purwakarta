@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { supabase, isSupabaseReady } from '../lib/supabase'
+import NotFound from '../components/NotFound'
 
 function AdminLogin() {
   const navigate = useNavigate()
@@ -164,10 +165,6 @@ function AdminLogin() {
       </div>
     </section>
   )
-}
-
-function NotFound() {
-  return <section className="page-section empty-state" style={{ paddingTop: 160 }}><h2>404 Not Found</h2></section>
 }
 
 export default AdminLogin

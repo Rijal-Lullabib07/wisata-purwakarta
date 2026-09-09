@@ -9,6 +9,7 @@ import Tentang from "./pages/Tentang";
 import Kontak from "./pages/Kontak";
 import AdminLogin from "./pages/AdminLogin";
 import AdminRoute from "./components/AdminRoute";
+import NotFound from "./components/NotFound";
 import "./App.css";
 
 // Dashboard dimuat lazy supaya bundle recharts tidak membebani halaman publik.
@@ -22,9 +23,10 @@ function App() {
       "/tentang": "Tentang Kami",
       "/kontak": "Kontak",
       "/statistik": "Statistik Destinasi",
-      "/panel-kj29xz": "Admin",
-      "/panel-kj29xz/statistik": "Admin Statistik",
     };
+    // Catatan: route admin SENGAJA tidak punya judul khusus — pengunjung yang
+    // belum masuk harus melihat judul generik yang sama seperti halaman 404
+    // biasa, supaya keberadaan route tidak terdeteksi dari title tab browser.
     const path = window.location.pathname;
     document.title = path.startsWith("/destinasi/")
       ? "Detail Destinasi | Purwakarta Istimewa"
@@ -66,14 +68,6 @@ function App() {
       </main>
       <Footer />
     </>
-  );
-}
-
-function NotFound() {
-  return (
-    <section className="page-section empty-state" style={{ paddingTop: 160 }}>
-      <h2>404 Not Found</h2>
-    </section>
   );
 }
 
