@@ -9,8 +9,13 @@ const allowedOrigins = (Deno.env.get('APP_ORIGIN') ?? '')
 
 function corsFor(request: Request): Record<string, string> {
   const origin = request.headers.get('origin') ?? ''
+  // Production harus persis ada di daftar; localhost/127.0.0.1 port berapa pun
+  // diterima selama ada minimal satu origin dev di daftar (port Vite bisa geser).
+  const isLocal = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+  const hasDevEntry = allowedOrigins.some((o) => /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o))
+  const allowed = allowedOrigins.includes(origin) || (isLocal && hasDevEntry)
   return {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : '',
+    'Access-Control-Allow-Origin': allowed ? origin : '',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Credentials': 'true',
     Vary: 'Origin',

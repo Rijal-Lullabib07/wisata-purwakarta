@@ -61,7 +61,7 @@ function AdminLogin() {
     })
     if (error || !data?.session) {
       const reason = (data?.error || (await readServerError(error)) || '').toLowerCase()
-      window.turnstile?.reset()
+      turnstileRef.current?.querySelector('iframe') && window.turnstile?.reset()
       setTurnstileToken('')
       if (reason.includes('captcha')) {
         // Server menuntut captcha (hitungan gagal di server >= 3) — paksa tampilkan widget.
