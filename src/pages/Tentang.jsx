@@ -1,63 +1,48 @@
-import { Link } from 'react-router-dom'
-
-const sejarahItems = [
-  {
-    tahun: 'Abad ke-7',
-    judul: 'Kerajaan Tarumanagara',
-    deskripsi: 'Purwakarta merupakan bagian dari wilayah Kerajaan Tarumanagara, kerajaan Hindu tertua di Jawa Barat. Beberapa prasasta ditemukan di kawasan ini.',
-  },
-  {
-    tahun: '1619',
-    judul: 'Pengaruh Kesultanan Cirebon',
-    deskripsi: 'Kawasan ini masuk dalam pengaruh Kesultanan Cirebon dan menjadi jalur perdagangan penting antara pesisir dan dataran tinggi.',
-  },
-  {
-    tahun: '1826',
-    judul: 'Era Kolonial Belanda',
-    deskripsi: 'Pembangunan Waduk Jatiluhur dimulai oleh pemerintah Hindia Belanda sebagai proyek irigasi terbesar di Asia Tenggara pada masanya.',
-  },
-  {
-    tahun: '2001',
-    judul: 'Era Modern',
-    deskripsi: 'Purwakarta mulai berkembang pesat sebagai kota wisata dengan berbagai inovasi program pariwisata berbasis budaya Sunda.',
-  },
-]
-
-const budayaItems = [
-  {
-    icon: '🎶',
-    judul: 'Seni Wayang Golek',
-    deskripsi: 'Seni pewayangan khas Sunda yang menggunakan boneka kayu, menjadi warisan budaya tak benda nasional.',
-  },
-  {
-    icon: '🍛',
-    judul: 'Kuliner Khas',
-    deskripsi: 'Soto Purwakarta, Lotek, Batagor, dan Nasi Timbel menjadi sajian wajib yang menggugah selera.',
-  },
-  {
-    icon: '🎪',
-    judul: 'Festival Budaya',
-    deskripsi: 'Berbagai festival tahunan seperti Purwakarta Karnival dan Karnaval Kebudayaan Sunda menarik ribuan pengunjung.',
-  },
-  {
-    icon: '🗣️',
-    judul: 'Bahasa Sunda',
-    deskripsi: 'Bahasa Sunda menjadi bahasa sehari-hari dengan filosofi "Silih Asuh, Silih Asuh" yang mencerminkan keramahan warganya.',
-  },
-]
+import { Link } from "react-router-dom";
+import { useLanguage } from "../i18n/LanguageContext";
 
 function Tentang() {
+  const { t } = useLanguage();
+
+  const sejarahItems = [
+    {
+      tahun: t("tentang.s1y"),
+      judul: t("tentang.s1t"),
+      deskripsi: t("tentang.s1d"),
+    },
+    {
+      tahun: t("tentang.s2y"),
+      judul: t("tentang.s2t"),
+      deskripsi: t("tentang.s2d"),
+    },
+    {
+      tahun: t("tentang.s3y"),
+      judul: t("tentang.s3t"),
+      deskripsi: t("tentang.s3d"),
+    },
+    {
+      tahun: t("tentang.s4y"),
+      judul: t("tentang.s4t"),
+      deskripsi: t("tentang.s4d"),
+    },
+  ];
+
+  const budayaItems = [
+    { icon: "🎶", judul: t("tentang.b1t"), deskripsi: t("tentang.b1d") },
+    { icon: "🍛", judul: t("tentang.b2t"), deskripsi: t("tentang.b2d") },
+    { icon: "🎪", judul: t("tentang.b3t"), deskripsi: t("tentang.b3d") },
+    { icon: "🗣️", judul: t("tentang.b4t"), deskripsi: t("tentang.b4d") },
+  ];
+
   return (
     <section className="page-section tentang-page">
       {/* HERO TENTANG */}
-      <div className="tentang-hero">
+      <div className="page-hero page-hero-tentang">
         <div className="section-container">
-          <p className="section-subtitle">Mengenal Lebih Dekat</p>
-          <h1 className="section-title" style={{ fontSize: 'clamp(2rem, 5vw, 3rem)' }}>Kota Purwakarta</h1>
-          <p className="section-desc" style={{ margin: '0 auto' }}>
-            Kabupaten Purwakarta terletak di provinsi Jawa Barat, Indonesia. Dikenal dengan julukan
-            <strong> "Kota Istimewa"</strong>, Purwakarta menyuguhkan perpaduan sempurna antara
-            keindahan alam, warisan sejarah, dan kearifan lokal Sunda.
+          <p className="section-subtitle">{t("tentang.heroSub")}</p>
+          <h1 className="section-title">Wisata Purwakarta</h1>
+          <p className="section-desc" style={{ margin: "0 auto" }}>
+            {t("tentang.heroDesc")}
           </p>
         </div>
       </div>
@@ -67,19 +52,19 @@ function Tentang() {
         <div className="stats-container">
           <div className="stat-item">
             <span className="stat-angka">876 km²</span>
-            <span className="stat-label">Luas Wilayah</span>
+            <span className="stat-label">{t("tentang.area")}</span>
           </div>
           <div className="stat-item">
             <span className="stat-angka">1M+</span>
-            <span className="stat-label">Penduduk</span>
+            <span className="stat-label">{t("tentang.population")}</span>
           </div>
           <div className="stat-item">
             <span className="stat-angka">17</span>
-            <span className="stat-label">Kecamatan</span>
+            <span className="stat-label">{t("tentang.districts")}</span>
           </div>
           <div className="stat-item">
             <span className="stat-angka">284</span>
-            <span className="stat-label">Desa & Kelurahan</span>
+            <span className="stat-label">{t("tentang.villages")}</span>
           </div>
         </div>
       </div>
@@ -88,12 +73,15 @@ function Tentang() {
       <div className="tentang-section">
         <div className="section-container">
           <div className="section-header">
-            <p className="section-subtitle">Perjalanan Waktu</p>
-            <h2 className="section-title">Sejarah Purwakarta</h2>
+            <p className="section-subtitle">{t("tentang.timelineSub")}</p>
+            <h2 className="section-title">{t("tentang.historyTitle")}</h2>
           </div>
           <div className="timeline">
             {sejarahItems.map((item, i) => (
-              <div className={`timeline-item ${i % 2 === 0 ? 'left' : 'right'}`} key={i}>
+              <div
+                className={`timeline-item ${i % 2 === 0 ? "left" : "right"}`}
+                key={i}
+              >
                 <div className="timeline-content">
                   <span className="timeline-year">{item.tahun}</span>
                   <h3 className="timeline-title">{item.judul}</h3>
@@ -106,14 +94,12 @@ function Tentang() {
       </div>
 
       {/* BUDAYA */}
-      <div className="tentang-section" style={{ background: 'var(--bg-dark)' }}>
+      <div className="tentang-section" style={{ background: "var(--bg-dark)" }}>
         <div className="section-container">
           <div className="section-header">
-            <p className="section-subtitle">Warisan Lokal</p>
-            <h2 className="section-title">Budaya & Tradisi</h2>
-            <p className="section-desc">
-              Purwakarta kaya akan warisan budaya Sunda yang masih lestari hingga kini
-            </p>
+            <p className="section-subtitle">{t("tentang.budayaSub")}</p>
+            <h2 className="section-title">{t("tentang.budayaTitle")}</h2>
+            <p className="section-desc">{t("tentang.budayaDesc")}</p>
           </div>
           <div className="budaya-grid">
             {budayaItems.map((item, i) => (
@@ -132,46 +118,49 @@ function Tentang() {
         <div className="section-container tentang-grid">
           <div className="tentang-image">
             <div className="tentang-img-placeholder">
-              <span>🏯</span>
-              <p>Purwakarta</p>
+              <img
+                src="/bagrond3.jpg"
+                alt="Purwakarta"
+                className="tentang-feature-photo"
+              />
+              <div className="tentang-photo-overlay" aria-hidden="true"></div>
             </div>
           </div>
           <div className="tentang-content">
-            <p className="section-subtitle">Mengapa Purwakarta?</p>
-            <h2 className="section-title">Keunggulan Kota Istimewa</h2>
+            <p className="section-subtitle">{t("tentang.whySub")}</p>
+            <h2 className="section-title">{t("tentang.whyTitle")}</h2>
             <p className="tentang-text">
-              Purwakarta bukan sekadar kota kecil di Jawa Barat. Dengan kombinasi
-              <strong> alam yang memesona</strong>, <strong>sejarah yang kaya</strong>, dan
-              <strong> masyarakat yang ramah</strong>, Purwakarta menawarkan pengalaman wisata
-              yang tak terlupakan.
+              {t("tentang.whyText1")} <strong>{t("tentang.whyS1")}</strong>,{" "}
+              <strong>{t("tentang.whyS2")}</strong>, {t("tentang.whyAnd")}{" "}
+              <strong>{t("tentang.whyS3")}</strong>, {t("tentang.whyText2")}
             </p>
             <div className="tentang-highlights">
               <div className="highlight-item">
                 <span className="highlight-icon">🌊</span>
                 <div>
-                  <strong>Waduk Jatiluhur</strong>
-                  <p>Waduk terbesar di Jawa Barat</p>
+                  <strong>{t("tentang.h1t")}</strong>
+                  <p>{t("tentang.h1d")}</p>
                 </div>
               </div>
               <div className="highlight-item">
                 <span className="highlight-icon">🎭</span>
                 <div>
-                  <strong>Budaya Sunda</strong>
-                  <p>Tari tradisional & kuliner khas</p>
+                  <strong>{t("tentang.h2t")}</strong>
+                  <p>{t("tentang.h2d")}</p>
                 </div>
               </div>
               <div className="highlight-item">
                 <span className="highlight-icon">🌿</span>
                 <div>
-                  <strong>Alam Asri</strong>
-                  <p>Curug, gunung & hutan tropis</p>
+                  <strong>{t("tentang.h3t")}</strong>
+                  <p>{t("tentang.h3d")}</p>
                 </div>
               </div>
               <div className="highlight-item">
                 <span className="highlight-icon">🏗️</span>
                 <div>
-                  <strong>Pembangunan Modern</strong>
-                  <p>Inovasi pariwisata berkelanjutan</p>
+                  <strong>{t("tentang.h4t")}</strong>
+                  <p>{t("tentang.h4d")}</p>
                 </div>
               </div>
             </div>
@@ -183,16 +172,18 @@ function Tentang() {
       <section className="cta-section">
         <div className="section-container">
           <div className="cta-content">
-            <h2 className="section-title">Siap Menjelajahi?</h2>
-            <p className="section-desc" style={{ margin: '0 auto 32px' }}>
-              Lihat daftar lengkap destinasi wisata yang ada di Purwakarta.
+            <h2 className="section-title">{t("tentang.ctaTitle")}</h2>
+            <p className="section-desc" style={{ margin: "0 auto 32px" }}>
+              {t("tentang.ctaDesc")}
             </p>
-            <Link to="/destinasi" className="btn btn-primary">Lihat Destinasi</Link>
+            <Link to="/destinasi" className="btn btn-primary">
+              {t("tentang.ctaBtn")}
+            </Link>
           </div>
         </div>
       </section>
     </section>
-  )
+  );
 }
 
-export default Tentang
+export default Tentang;

@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /panel-kj29xz
+Disallow: /panel-kj29xz/

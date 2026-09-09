@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import destinasi from '../data/destinasi'
+import { trackDestinationClick } from '../lib/tracking'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const fasilitasLabels = {
   toilet: { icon: '🚻', label: 'Toilet' },
@@ -25,6 +28,7 @@ function getFasilitasList(fasilitas) {
 }
 
 function Destinasi() {
+  const { t } = useLanguage()
   const [filter, setFilter] = useState('Semua')
   const [search, setSearch] = useState('')
 
@@ -43,21 +47,24 @@ function Destinasi() {
 
   return (
     <section className="page-section destinasi-section">
-      <div className="section-container">
-        <div className="section-header">
-          <p className="section-subtitle">Jelajahi Semua Tempat</p>
-          <h2 className="section-title">Destinasi Wisata</h2>
+      {/* HERO BACKGROUND */}
+      <div className="page-hero page-hero-destinasi">
+        <div className="section-container">
+          <p className="section-subtitle">{t('dest.sub')}</p>
+          <h1 className="section-title">{t('dest.title')}</h1>
           <p className="section-desc">
-            {destinasi.length} destinasi wisata di Kabupaten Purwakarta. Gunakan filter dan pencarian untuk menemukan wisata sesuai minat Anda.
+            {t('dest.desc', { count: destinasi.length })}
           </p>
         </div>
+      </div>
 
+      <div className="section-container">
         {/* Search */}
         <div className="search-bar">
           <span className="search-icon">🔍</span>
           <input
             type="text"
-            placeholder="Cari destinasi, kecamatan, atau alamat..."
+            placeholder={t('dest.searchPh')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="search-input"
@@ -74,29 +81,32 @@ function Destinasi() {
               className={`filter-btn ${filter === k ? 'active' : ''}`}
               onClick={() => setFilter(k)}
             >
-              {k}
+              {k === 'Semua' ? t('dest.all') : k}
             </button>
           ))}
         </div>
 
         <div className="destinasi-count">
-          Menampilkan <strong>{filtered.length}</strong> dari {destinasi.length} destinasi
+          {t('dest.showing')} <strong>{filtered.length}</strong> {t('dest.of')} {destinasi.length} {t('dest.destWord')}
         </div>
 
         <div className="destinasi-grid">
           {filtered.map((d, i) => {
             const fasilitasList = getFasilitasList(d.fasilitas)
+            const detailTo = `/destinasi/${d.slug}`
             return (
-              <div className="dest-card" key={i}>
-                <div className="dest-image">
+              <div className="dest-card" key={i} onClick={() => trackDestinationClick(d)}>
+                <Link to={detailTo} className="dest-image" aria-label={`Lihat detail ${d.nama}`}>
                   <img src={d.gambar} alt={d.nama} loading="lazy" />
                   <span className="dest-badge">{d.kategori}</span>
                   {d.rating && (
                     <span className="dest-rating">⭐ {d.rating}</span>
                   )}
-                </div>
+                </Link>
                 <div className="dest-body">
-                  <h3 className="dest-name">{d.nama}</h3>
+                  <h3 className="dest-name">
+                    <Link to={detailTo}>{d.nama}</Link>
+                  </h3>
                   <p className="dest-kecamatan">📍 {d.kecamatan}</p>
                   <p className="dest-desc">{d.deskripsi}</p>
                   <div className="dest-info">
@@ -108,7 +118,7 @@ function Destinasi() {
                   {/* Fasilitas */}
                   {fasilitasList.length > 0 && (
                     <div className="fasilitas-section">
-                      <p className="fasilitas-title">Fasilitas:</p>
+                      <p className="fasilitas-title">{t('dest.fasilitas')}</p>
                       <div className="fasilitas-grid">
                         {fasilitasList.map(f => (
                           <span key={f.key} className="fasilitas-badge" title={f.label}>
@@ -120,17 +130,23 @@ function Destinasi() {
                   )}
 
                   {d.ulasan && (
-                    <p className="dest-ulasan">💬 {d.ulasan} ulasan</p>
+                    <p className="dest-ulasan">💬 {d.ulasan} {t('dest.reviews')}</p>
                   )}
-                  {d.maps ? (
-                    <a href={d.maps} target="_blank" rel="noopener noreferrer" className="btn btn-sm">
-                      Buka di Maps →
-                    </a>
-                  ) : (
-                    <button className="btn btn-sm" disabled style={{ opacity: 0.5 }}>
-                      Info Lokasi
-                    </button>
-                  )}
+
+                  <div className="dest-actions">
+                    <Link to={detailTo} className="btn btn-sm">
+                      {t('dest.detail')}
+                    </Link>
+                    {d.maps ? (
+                      <a href={d.maps} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-ghost">
+                        {t('dest.maps')}
+                      </a>
+                    ) : (
+                      <button className="btn btn-sm btn-ghost" disabled style={{ opacity: 0.5 }}>
+                        {t('dest.locInfo')}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )
@@ -139,9 +155,9 @@ function Destinasi() {
 
         {filtered.length === 0 && (
           <div className="empty-state">
-            <p>Tidak ada destinasi yang cocok dengan pencarian Anda.</p>
+            <p>{t('dest.empty')}</p>
             <button className="btn btn-sm" onClick={() => { setFilter('Semua'); setSearch('') }}>
-              Tampilkan Semua
+              {t('dest.showAll')}
             </button>
           </div>
         )}

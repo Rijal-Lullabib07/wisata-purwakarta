@@ -1,18 +1,13 @@
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import destinasi from "../data/destinasi";
+import { trackDestinationClick } from "../lib/tracking";
+import { useLanguage } from "../i18n/LanguageContext";
 
-const uniqueKecamatan = new Set(destinasi.map(d => d.kecamatan)).size;
-const avgRating = (destinasi.reduce((sum, d) => sum + (d.rating || 0), 0) / destinasi.length).toFixed(1);
-
-const stats = [
-  { value: destinasi.length, decimals: 0, suffix: "+", label: "Destinasi Wisata" },
-  { value: 1.2, decimals: 1, suffix: "M", label: "Wisatawan/Tahun" },
-  { value: uniqueKecamatan, decimals: 0, suffix: "", label: "Kecamatan Wisata" },
-  { value: parseFloat(avgRating), decimals: 1, suffix: "", label: "Rating Wisata" },
-];
-
-const destinasiPopuler = destinasi.slice(0, 3);
+const uniqueKecamatan = new Set(destinasi.map((d) => d.kecamatan)).size;
+const avgRating = (
+  destinasi.reduce((sum, d) => sum + (d.rating || 0), 0) / destinasi.length
+).toFixed(1);
 
 /** Hook kecil: menghitung angka dari 0 -> target, sekali, saat elemen masuk viewport */
 function useCountUp(target, decimals = 0, duration = 1400) {
@@ -76,11 +71,37 @@ const particles = Array.from({ length: 20 }, (_, i) => ({
   id: i,
   left: `${(i * 5.23) % 100}%`,
   delay: `${(i * 0.37) % 5}s`,
-  duration: `${3 + (i * 0.71) % 4}s`,
-  size: `${2 + (i * 0.43) % 4}px`,
-}))
+  duration: `${3 + ((i * 0.71) % 4)}s`,
+  size: `${2 + ((i * 0.43) % 4)}px`,
+}));
 
 function Beranda() {
+  const { t } = useLanguage();
+
+  const stats = [
+    {
+      value: destinasi.length,
+      decimals: 0,
+      suffix: "+",
+      label: t("stats.destinations"),
+    },
+    { value: 1.2, decimals: 1, suffix: "M", label: t("stats.visitors") },
+    {
+      value: uniqueKecamatan,
+      decimals: 0,
+      suffix: "",
+      label: t("stats.districts"),
+    },
+    {
+      value: parseFloat(avgRating),
+      decimals: 1,
+      suffix: "",
+      label: t("stats.rating"),
+    },
+  ];
+
+  const destinasiPopuler = destinasi.slice(0, 3);
+
   return (
     <>
       {/* HERO */}
@@ -89,29 +110,33 @@ function Beranda() {
         <div className="hero-overlay"></div>
         <div className="hero-particles" aria-hidden="true">
           {particles.map((p) => (
-            <span key={p.id} className="particle" style={{
-              left: p.left,
-              animationDelay: p.delay,
-              animationDuration: p.duration,
-              width: p.size,
-              height: p.size,
-            }}></span>
+            <span
+              key={p.id}
+              className="particle"
+              style={{
+                left: p.left,
+                animationDelay: p.delay,
+                animationDuration: p.duration,
+                width: p.size,
+                height: p.size,
+              }}
+            ></span>
           ))}
         </div>
 
         <div className="hero-content">
-          <div className="hero-badge">🏔️ Kota Istimewa</div>
-          <p className="hero-subtitle">✦ Selamat Datang di ✦</p>
+          <p className="hero-subtitle">{t("hero.welcome")}</p>
           <h1 className="hero-title">
-            Purwakarta <span className="text-gradient">Wisata</span>
+            Wisata <span className="text-gradient">Purwakarta</span>
           </h1>
-          <p className="hero-desc">
-            Jelajahi keindahan alam, budaya, dan sejarah Kabupaten Purwakarta.
-            Dari waduk megah hingga curug tersembunyi — setiap sudut menyimpan cerita.
-          </p>
+          <p className="hero-desc">{t("hero.desc")}</p>
           <div className="hero-buttons">
-            <Link to="/destinasi" className="btn btn-primary">Jelajahi Destinasi</Link>
-            <Link to="/tentang" className="btn btn-outline">Tentang Purwakarta</Link>
+            <Link to="/destinasi" className="btn btn-primary">
+              {t("hero.explore")}
+            </Link>
+            <Link to="/tentang" className="btn btn-outline">
+              {t("hero.about")}
+            </Link>
           </div>
         </div>
 
@@ -134,35 +159,45 @@ function Beranda() {
       <section className="destinasi-section">
         <div className="section-container">
           <div className="section-header">
-            <p className="section-subtitle">Tempat yang wajib dikunjungi</p>
-            <h2 className="section-title">Destinasi Populer</h2>
-            <p className="section-desc">
-              Temukan keindahan alam dan pesona budaya di setiap sudut
-              Purwakarta
-            </p>
+            <p className="section-subtitle">{t("home.popSub")}</p>
+            <h2 className="section-title">{t("home.popTitle")}</h2>
+            <p className="section-desc">{t("home.popDesc")}</p>
           </div>
 
           <div className="destinasi-grid">
-            {destinasiPopuler.map((d, i) => (
-              <div className="dest-card" key={i}>
-                <div className="dest-image">
-                  <img src={d.gambar} alt={d.nama} loading="lazy" />
-                  <span className="dest-badge">{d.kategori}</span>
-                </div>
-                <div className="dest-body">
-                  <h3 className="dest-name">{d.nama}</h3>
-                  <p className="dest-desc">{d.deskripsi}</p>
-                  <Link to="/destinasi" className="btn btn-sm">
-                    Selengkapnya →
+            {destinasiPopuler.map((d, i) => {
+              const detailTo = `/destinasi/${d.slug}`;
+              return (
+                <div
+                  className="dest-card"
+                  key={i}
+                  onClick={() => trackDestinationClick(d)}
+                >
+                  <Link
+                    to={detailTo}
+                    className="dest-image"
+                    aria-label={`Lihat detail ${d.nama}`}
+                  >
+                    <img src={d.gambar} alt={d.nama} loading="lazy" />
+                    <span className="dest-badge">{d.kategori}</span>
                   </Link>
+                  <div className="dest-body">
+                    <h3 className="dest-name">
+                      <Link to={detailTo}>{d.nama}</Link>
+                    </h3>
+                    <p className="dest-desc">{d.deskripsi}</p>
+                    <Link to={detailTo} className="btn btn-sm">
+                      {t("home.more")}
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div style={{ textAlign: "center", marginTop: "40px" }}>
             <Link to="/destinasi" className="btn btn-primary">
-              Lihat Semua Destinasi
+              {t("home.viewAll")}
             </Link>
           </div>
         </div>
@@ -173,15 +208,10 @@ function Beranda() {
         <div className="cta-pattern" aria-hidden="true"></div>
         <div className="section-container">
           <div className="cta-content">
-            <h2 className="section-title cta-title">
-              Kenali Purwakarta Lebih Dekat
-            </h2>
-            <p className="section-desc cta-desc">
-              Dari keagungan Waduk Jatiluhur hingga kearifan lokal Sunda — ada
-              banyak cerita menarik yang menunggu untuk Anda temukan.
-            </p>
+            <h2 className="section-title cta-title">{t("home.ctaTitle")}</h2>
+            <p className="section-desc cta-desc">{t("home.ctaDesc")}</p>
             <Link to="/tentang" className="btn btn-primary">
-              Tentang Purwakarta
+              {t("home.ctaBtn")}
             </Link>
           </div>
         </div>

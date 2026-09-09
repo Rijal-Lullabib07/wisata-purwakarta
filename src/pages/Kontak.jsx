@@ -1,21 +1,14 @@
 import { useState } from "react";
-
-const kontakInfo = [
-  {
-    icon: "📍",
-    judul: "Alamat",
-    detail: "Jl. Gandasari No.1, Purwakarta, Jawa Barat 41111",
-  },
-  { icon: "📞", judul: "Telepon", detail: "+62 264 201 234" },
-  { icon: "✉️", judul: "Email", detail: "wisata@purwakartakab.go.id" },
-  {
-    icon: "🕐",
-    judul: "Jam Buka",
-    detail: "Senin - Minggu: 08.00 - 17.00 WIB",
-  },
-];
+import { useLanguage } from "../i18n/LanguageContext";
 
 function Kontak() {
+  const { t } = useLanguage();
+  const kontakInfo = [
+    { icon: "📍", judul: t("kontak.addr"), detail: t("kontak.addrDetail") },
+    { icon: "📞", judul: t("kontak.phone"), detail: t("kontak.phoneDetail") },
+    { icon: "✉️", judul: t("kontak.email"), detail: t("kontak.emailDetail") },
+    { icon: "🕐", judul: t("kontak.hours"), detail: t("kontak.hoursDetail") },
+  ];
   const [formData, setFormData] = useState({
     nama: "",
     email: "",
@@ -41,11 +34,9 @@ function Kontak() {
 
       <div className="section-container">
         <div className="section-header">
-          <p className="section-subtitle">Hubungi Kami</p>
-          <h2 className="section-title">Kontak & Lokasi</h2>
-          <p className="section-desc">
-            Punya pertanyaan atau saran? Jangan ragu untuk menghubungi kami.
-          </p>
+          <p className="section-subtitle">{t("kontak.sub")}</p>
+          <h2 className="section-title">{t("kontak.title")}</h2>
+          <p className="section-desc">{t("kontak.desc")}</p>
         </div>
 
         {/* INFO CARDS */}
@@ -63,69 +54,71 @@ function Kontak() {
         <div className="kontak-content-grid">
           {/* FORM */}
           <div className="kontak-form-wrapper">
-            <h3 className="form-title">Kirim Pesan</h3>
+            <h3 className="form-title">{t("kontak.formTitle")}</h3>
 
             <div className="form-success-slot" aria-live="polite">
               {submitted && (
-                <div className="form-success">
-                  Pesan berhasil dikirim. Kami akan segera merespons.
-                </div>
+                <div className="form-success">{t("kontak.success")}</div>
               )}
             </div>
 
             <form className="kontak-form" onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="nama">Nama Lengkap</label>
+                  <label htmlFor="nama">{t("kontak.fName")}</label>
                   <input
                     type="text"
                     id="nama"
                     name="nama"
-                    placeholder="Masukkan nama Anda"
+                    placeholder={t("kontak.phName")}
                     value={formData.nama}
+                    maxLength={80}
                     onChange={handleChange}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="email">Email</label>
+                  <label htmlFor="email">{t("kontak.fEmail")}</label>
                   <input
                     type="email"
                     id="email"
                     name="email"
-                    placeholder="Masukkan email Anda"
+                    placeholder={t("kontak.phEmail")}
                     value={formData.email}
+                    maxLength={254}
                     onChange={handleChange}
                     required
                   />
                 </div>
               </div>
               <div className="form-group">
-                <label htmlFor="subjek">Subjek</label>
+                <label htmlFor="subjek">{t("kontak.fSubject")}</label>
                 <input
                   type="text"
                   id="subjek"
                   name="subjek"
-                  placeholder="Perihal pesan Anda"
+                  placeholder={t("kontak.phSubject")}
                   value={formData.subjek}
+                  maxLength={120}
                   onChange={handleChange}
                   required
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="pesan">Pesan</label>
+                <label htmlFor="pesan">{t("kontak.fMessage")}</label>
                 <textarea
                   id="pesan"
                   name="pesan"
                   rows="5"
-                  placeholder="Tuliskan pesan Anda di sini..."
+                  placeholder={t("kontak.phMessage")}
                   value={formData.pesan}
+                  maxLength={2000}
                   onChange={handleChange}
                   required
                 ></textarea>
               </div>
               <button type="submit" className="btn btn-primary">
-                Kirim Pesan
+                {t("kontak.send")}
               </button>
             </form>
           </div>
@@ -134,7 +127,7 @@ function Kontak() {
           <div className="kontak-map">
             <div className="map-placeholder">
               <span className="map-pin">📍</span>
-              <h3>Peta Lokasi</h3>
+              <h3>{t("kontak.mapTitle")}</h3>
               <p>Jl. Gandasari No.1, Purwakarta, Jawa Barat 41111</p>
               <a
                 href="https://maps.google.com/?q=Purwakarta+Jawa+Barat"
@@ -143,7 +136,7 @@ function Kontak() {
                 className="btn btn-sm"
                 style={{ marginTop: "16px" }}
               >
-                Buka di Google Maps →
+                {t("kontak.mapBtn")}
               </a>
             </div>
           </div>

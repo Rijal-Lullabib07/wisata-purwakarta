@@ -1112,4 +1112,42 @@ const destinasi = [
   }
 ]
 
+// ---------------------------------------------------------------------------
+// Enrichment otomatis: koordinat perkiraan per kecamatan + slug untuk route
+// detail. Koordinat memakai titik tengah kecamatan (approximation) — bisa
+// diperhalus manual per destinasi bila ingin pin yang presisi.
+// ---------------------------------------------------------------------------
+const koordinatKecamatan = {
+  Bojong:      { latitude: -6.6340, longitude: 107.4970 },
+  Bungursari:  { latitude: -6.5900, longitude: 107.4560 },
+  Campaka:     { latitude: -6.6170, longitude: 107.4720 },
+  Cibatu:      { latitude: -6.6010, longitude: 107.5150 },
+  Darangdan:   { latitude: -6.6790, longitude: 107.4680 },
+  Jatiluhur:   { latitude: -6.5560, longitude: 107.4090 },
+  Kiarapedes:  { latitude: -6.6610, longitude: 107.5520 },
+  Maniis:      { latitude: -6.7060, longitude: 107.4400 },
+  Pasawahan:   { latitude: -6.6290, longitude: 107.3920 },
+  Plered:      { latitude: -6.6180, longitude: 107.4310 },
+  Purwakarta:  { latitude: -6.5569, longitude: 107.4430 },
+  Sukasari:    { latitude: -6.6580, longitude: 107.4120 },
+  Sukatani:    { latitude: -6.5990, longitude: 107.4990 },
+  Tegalwaru:   { latitude: -6.6500, longitude: 107.4700 },
+  Wanayasa:    { latitude: -6.6950, longitude: 107.3350 },
+}
+
+const slugify = (text = '') =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+
+destinasi.forEach((d) => {
+  const koord = koordinatKecamatan[d.kecamatan] || koordinatKecamatan.Purwakarta
+  d.slug = slugify(d.nama)
+  d.latitude = koord.latitude
+  d.longitude = koord.longitude
+})
+
 export default destinasi
