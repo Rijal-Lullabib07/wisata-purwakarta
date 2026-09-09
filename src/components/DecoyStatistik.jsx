@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import destinasi from "../data/destinasi";
+import { supabase, isSupabaseReady } from "../lib/supabase";
 
 /**
  * Halaman statistik "penyamar".
@@ -90,6 +92,21 @@ function BarChart({ title, data, max, warna }) {
 
 export default function DecoyStatistik() {
   const stat = hitungStatistik();
+  const [bps, setBps] = useState({
+    wisnus: { nilai: "389,13 ribu", periode: "Maret 2026" },
+    tpk: { nilai: "37,04%", periode: "Juli 2025" },
+  });
+
+  // Angka BPS live dari Edge Function (fallback angka statis bila gagal).
+  useEffect(() => {
+    if (!isSupabaseReady) return;
+    supabase.functions
+      .invoke("bps-stats")
+      .then(({ data }) => {
+        if (data?.wisnus?.nilai && data?.tpk?.nilai) setBps(data);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <section className="page-section" style={{ paddingTop: 90 }}>
@@ -123,8 +140,8 @@ export default function DecoyStatistik() {
         }}
       >
         {[
-          { angka: "389,13 ribu", label: "Perjalanan Wisnus ke Purwakarta (Maret 2026)" },
-          { angka: "37,04%", label: "Okupansi Hotel / TPK (Juli 2025)" },
+          { angka: bps.wisnus.nilai, label: `Perjalanan Wisnus ke Purwakarta (${bps.wisnus.periode})` },
+          { angka: bps.tpk.nilai, label: `Okupansi Hotel / TPK (${bps.tpk.periode})` },
           { angka: `${stat.total}`, label: "Destinasi Wisata Terdata" },
           { angka: `${stat.rataRating} ★`, label: "Rata-rata Rating Destinasi" },
         ].map((item) => (
