@@ -55,7 +55,7 @@ function AdminRoute({ children }) {
     );
   if (state === "mfa")
     return (
-      <Navigate to="/panel-kj29xz" replace state={{ mfaRequired: true }} />
+      <Navigate to="/panel-kj29xz/login" replace state={{ mfaRequired: true }} />
     );
   if (state !== "allowed") return <DecoyStatistik />;
   return children;

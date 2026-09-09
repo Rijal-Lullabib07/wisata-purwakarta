@@ -1,5 +1,12 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
+
+// Admin panel dimuat lazy — tidak membebani bundle halaman publik.
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminDestinations = lazy(() => import("./pages/admin/Destinations"));
+const AdminDestinationForm = lazy(() => import("./pages/admin/DestinationForm"));
+const AdminCategories = lazy(() => import("./pages/admin/Categories"));
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Beranda from "./pages/Beranda";
@@ -46,26 +53,36 @@ function App() {
             path="/statistik"
             element={<DecoyStatistik />}
           />
+          {/* Login TIDAK dibungkus AdminRoute — justru kebalikannya. */}
+          <Route path="/panel-kj29xz/login" element={<AdminLogin />} />
           <Route
-            path="/panel-kj29xz/statistik"
+            path="/panel-kj29xz"
             element={
               <AdminRoute>
                 <Suspense
                   fallback={
-                    <div
-                      className="page-section empty-state"
-                      style={{ paddingTop: 200 }}
-                    >
-                      Memuat…
-                    </div>
+                    <div className="page-section empty-state" style={{ paddingTop: 200 }}>Memuat…</div>
                   }
                 >
-                  <Statistik />
+                  <AdminLayout />
                 </Suspense>
               </AdminRoute>
             }
-          />
-          <Route path="/panel-kj29xz" element={<AdminLogin />} />
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="destinasi" element={<AdminDestinations />} />
+            <Route path="destinasi/baru" element={<AdminDestinationForm />} />
+            <Route path="destinasi/:id/edit" element={<AdminDestinationForm />} />
+            <Route path="kategori" element={<AdminCategories />} />
+            <Route
+              path="statistik"
+              element={
+                <Suspense fallback={<div className="page-section empty-state" style={{ paddingTop: 200 }}>Memuat…</div>}>
+                  <Statistik />
+                </Suspense>
+              }
+            />
+          </Route>
           <Route path="/tentang" element={<Tentang />} />
           <Route path="/kontak" element={<Kontak />} />
           <Route path="*" element={<NotFound />} />

@@ -86,7 +86,7 @@ function AdminLogin() {
     setSession(data.session)
     setFailures(0)
     if (data.mfa_required) await prepareMfa()
-    else navigate('/panel-kj29xz/statistik', { replace: true })
+    else navigate('/panel-kj29xz', { replace: true })
     setBusy(false)
   }
 
@@ -118,12 +118,12 @@ function AdminLogin() {
     if (challengeError) return setMessage('MFA gagal diproses.')
     const { error } = await supabase.auth.mfa.verify({ factorId: factor.id, challengeId: challenge.id, code })
     if (error) setMessage('Kode MFA salah atau sudah kedaluwarsa.')
-    else navigate('/panel-kj29xz/statistik', { replace: true })
+    else navigate('/panel-kj29xz', { replace: true })
     setBusy(false)
   }
 
   if (!isSupabaseReady) return <DecoyStatistik />
-  if (session && !factor && !location.state?.mfaRequired) return <Navigate to="/panel-kj29xz/statistik" replace />
+  if (session && !factor && !location.state?.mfaRequired) return <Navigate to="/panel-kj29xz" replace />
 
   return (
     <section className="page-section empty-state" style={{ paddingTop: 150 }}>

@@ -66,6 +66,30 @@ create index if not exists idx_dest_slug       on public.destinations (slug);
 -- ---------------------------------------------------------------------------
 alter table public.destinations        enable row level security;
 alter table public.destination_clicks  enable row level security;
+-- Catatan: RLS untuk categories diaktifkan di bagian 3-pre, setelah tabelnya dibuat.
+
+-- ---------------------------------------------------------------------------
+-- 3-pre. KATEGORI DESTINASI (dikelola lewat admin panel)
+-- ---------------------------------------------------------------------------
+create table if not exists public.categories (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  slug       text unique not null,
+  icon       text,
+  created_at timestamptz not null default now()
+);
+alter table public.categories enable row level security;
+
+-- Kolom tambahan destinations untuk CRUD admin (idempotent).
+alter table public.destinations add column if not exists is_published boolean not null default true;
+alter table public.destinations add column if not exists created_by   uuid references auth.users(id) on delete set null;
+alter table public.destinations add column if not exists meta_title    text;
+alter table public.destinations add column if not exists meta_description text;
+alter table public.destinations add column if not exists storage_paths jsonb default '[]'::jsonb;
+alter table public.categories  add column if not exists updated_at  timestamptz not null default now();
+
+create index if not exists idx_dest_published on public.destinations (is_published);
+create index if not exists idx_dest_kategori  on public.destinations (kategori);
 
 -- ---------------------------------------------------------------------------
 -- 3a. ADMIN AUTHORIZATION & AUDIT
@@ -85,7 +109,7 @@ create table if not exists public.admin_audit_logs (
   user_id      uuid references auth.users(id) on delete set null,
   ip_address   inet,
   user_agent   text,
-  status       text not null check (status in ('success', 'failure', 'locked', 'mfa_failure')),
+  status       text not null check (status in ('success', 'failure', 'locked', 'mfa_failure', 'crud_create', 'crud_update', 'crud_delete')),
   created_at   timestamptz not null default now()
 );
 
@@ -136,10 +160,48 @@ revoke insert, update, delete on public.admin_audit_logs from anon, authenticate
 drop policy if exists "destinations public read"  on public.destinations;
 drop policy if exists "destinations admin read" on public.destinations;
 drop policy if exists "clicks anon insert"        on public.destination_clicks;
+drop policy if exists "destinations public read published" on public.destinations;
+drop policy if exists "destinations admin insert"          on public.destinations;
+drop policy if exists "destinations admin update"          on public.destinations;
+drop policy if exists "destinations admin delete"          on public.destinations;
+drop policy if exists "categories public read"             on public.categories;
+drop policy if exists "categories admin write"             on public.categories;
+drop policy if exists "galeri public read"                 on storage.objects;
+drop policy if exists "galeri admin write"                 on storage.objects;
+drop policy if exists "galeri admin update"                on storage.objects;
+drop policy if exists "galeri admin delete"                on storage.objects;
+
+-- Publik: hanya destinasi yang ter-publish yang boleh dibaca anon.
+create policy "destinations public read published"
+  on public.destinations for select
+  using (is_published = true or public.is_admin_verified());
 
 create policy "destinations admin read"
   on public.destinations for select
   using (public.is_admin_verified());
+
+-- Admin terverifikasi (AAL2) boleh tulis; setiap perubahan tercatat di audit.
+create policy "destinations admin insert"
+  on public.destinations for insert
+  with check (public.is_admin_verified());
+
+create policy "destinations admin update"
+  on public.destinations for update
+  using (public.is_admin_verified())
+  with check (public.is_admin_verified());
+
+create policy "destinations admin delete"
+  on public.destinations for delete
+  using (public.is_admin_verified());
+
+create policy "categories public read"
+  on public.categories for select
+  using (true);
+
+create policy "categories admin write"
+  on public.categories for all
+  using (public.is_admin_verified())
+  with check (public.is_admin_verified());
 
 create policy "clicks anon insert"
   on public.destination_clicks for insert
@@ -254,6 +316,61 @@ $$;
 
 revoke execute on function public.get_visitor_log(integer) from anon;
 grant execute on function public.get_visitor_log(integer) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 5b. AUDIT TRIGGER CRUD DESTINASI
+-- Setiap insert/update/delete destinasi oleh admin tercatat otomatis.
+-- ---------------------------------------------------------------------------
+create or replace function public.log_destinations_change()
+returns trigger language plpgsql security definer set search_path = public
+as $$
+begin
+  -- Hanya admin yang sudah lolos MFA (AAL2) yang dicatat — sesuai desain keamanan.
+  if coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2' then
+    insert into public.admin_audit_logs (user_id, ip_address, user_agent, status)
+    values (
+      auth.uid(),
+      null,
+      -- Pada DELETE variabel NEW tidak terdefinisi, jadi pilih kolom via tg_op
+      -- (CASE di plpgsql hanya mengevaluasi cabang yang diambil).
+      'CRUD: ' || (case tg_op when 'DELETE' then old.slug else new.slug end),
+      case tg_op when 'INSERT' then 'crud_create' when 'UPDATE' then 'crud_update' else 'crud_delete' end
+    );
+  end if;
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists trg_destinations_audit on public.destinations;
+create trigger trg_destinations_audit
+after insert or update or delete on public.destinations
+for each row execute function public.log_destinations_change();
+
+-- ---------------------------------------------------------------------------
+-- 5c. STORAGE BUCKET GALERI (HD)
+-- Public read; admin terverifikasi boleh tulis/hapus.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('destinasi-galeri', 'destinasi-galeri', true)
+on conflict (id) do nothing;
+
+create policy "galeri public read"
+  on storage.objects for select
+  using (bucket_id = 'destinasi-galeri');
+
+create policy "galeri admin write"
+  on storage.objects for insert
+  with check (bucket_id = 'destinasi-galeri' and public.is_admin_verified());
+
+create policy "galeri admin update"
+  on storage.objects for update
+  using (bucket_id = 'destinasi-galeri' and public.is_admin_verified());
+
+create policy "galeri admin delete"
+  on storage.objects for delete
+  using (bucket_id = 'destinasi-galeri' and public.is_admin_verified());
 
 -- ---------------------------------------------------------------------------
 -- 6. SEED destinations — contoh. Hapus/sesuaikan blok ini bila perlu.
