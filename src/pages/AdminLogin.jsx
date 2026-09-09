@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { supabase, isSupabaseReady } from '../lib/supabase'
-import NotFound from '../components/NotFound'
+import DecoyStatistik from '../components/DecoyStatistik'
 
 function AdminLogin() {
   const navigate = useNavigate()
@@ -122,7 +122,7 @@ function AdminLogin() {
     setBusy(false)
   }
 
-  if (!isSupabaseReady) return <NotFound />
+  if (!isSupabaseReady) return <DecoyStatistik />
   if (session && !factor && !location.state?.mfaRequired) return <Navigate to="/panel-kj29xz/statistik" replace />
 
   return (

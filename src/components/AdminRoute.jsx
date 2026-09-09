@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase, isSupabaseReady } from "../lib/supabase";
-import NotFound from "./NotFound";
+import DecoyStatistik from "./DecoyStatistik";
 
 const IDLE_LIMIT = 15 * 60 * 1000;
 
@@ -57,7 +57,7 @@ function AdminRoute({ children }) {
     return (
       <Navigate to="/panel-kj29xz" replace state={{ mfaRequired: true }} />
     );
-  if (state !== "allowed") return <NotFound />;
+  if (state !== "allowed") return <DecoyStatistik />;
   return children;
 }
 
