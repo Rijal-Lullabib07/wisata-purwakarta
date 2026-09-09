@@ -1,12 +1,27 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const cors = {
-  'Access-Control-Allow-Origin': Deno.env.get('APP_ORIGIN') ?? '',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Credentials': 'true',
+// APP_ORIGIN boleh berisi beberapa origin dipisah koma, contoh:
+// APP_ORIGIN=https://wisata-purwakarta.vercel.app,http://localhost:5173
+const allowedOrigins = (Deno.env.get('APP_ORIGIN') ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
+function corsFor(request: Request): Record<string, string> {
+  const origin = request.headers.get('origin') ?? ''
+  return {
+    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+    Vary: 'Origin',
+  }
 }
 
 Deno.serve(async (request) => {
+  const cors = corsFor(request)
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
+
   if (request.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
@@ -62,10 +77,6 @@ async function audit(client: ReturnType<typeof createClient>, userId: string | n
 async function digest(value: string) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
   return Array.from(new Uint8Array(bytes)).map((byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 }
 
 async function verifyTurnstile(token: string, remoteip: string) {
