@@ -11,6 +11,7 @@ function AdminLogin() {
   const [code, setCode] = useState('')
   const [factor, setFactor] = useState(null)
   const [qr, setQr] = useState('')
+  const [secret, setSecret] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [failures, setFailures] = useState(0)
@@ -106,6 +107,7 @@ function AdminLogin() {
     if (error) return setMessage('MFA belum dapat disiapkan — coba muat ulang halaman.')
     setFactor(enrolled)
     setQr(enrolled.totp.uri)
+    setSecret(enrolled.totp.uri.match(/secret=([^&]+)/)?.[1] ?? '')
   }
 
   async function verifyMfa(event) {
@@ -137,7 +139,23 @@ function AdminLogin() {
           </form>
         ) : (
           <form className="kontak-form" onSubmit={verifyMfa} style={{ maxWidth: 360, margin: '20px auto 0', textAlign: 'left' }}>
-            {qr && <><p>Scan URI MFA berikut dengan authenticator:</p><input value={qr} readOnly aria-label="MFA provisioning URI" /></>}
+            {secret && (
+              <>
+                <p style={{ marginBottom: 4 }}><strong>Langkah setup:</strong> buka Google Authenticator di HP → tombol <strong>+</strong> → <em>Enter a setup key</em> → paste kode ini:</p>
+                <input
+                  value={secret}
+                  readOnly
+                  aria-label="Kode rahasia MFA"
+                  onFocus={(event) => event.target.select()}
+                  onClick={(event) => event.target.select()}
+                  style={{ width: '100%', marginBottom: 12, fontWeight: 700, letterSpacing: 1 }}
+                />
+                <details style={{ marginBottom: 12 }}>
+                  <summary style={{ cursor: 'pointer', fontSize: 13 }}>URI lengkap (alternatif scan)</summary>
+                  <input value={qr} readOnly aria-label="MFA provisioning URI" onFocus={(event) => event.target.select()} onClick={(event) => event.target.select()} style={{ width: '100%', fontSize: 12 }} />
+                </details>
+              </>
+            )}
             <div className="form-group"><label htmlFor="mfa-code">Kode authenticator</label><input id="mfa-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value)} required /></div>
             {message && <p role="alert" className="form-error">{message}</p>}
             <button type="submit" className="btn btn-primary" disabled={busy}>Verifikasi</button>
