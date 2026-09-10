@@ -1,13 +1,8 @@
 import { Link } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
-import destinasi from "../data/destinasi";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { usePublicDestinations } from "../hooks/useDestinations";
 import { trackDestinationClick } from "../lib/tracking";
 import { useLanguage } from "../i18n/LanguageContext";
-
-const uniqueKecamatan = new Set(destinasi.map((d) => d.kecamatan)).size;
-const avgRating = (
-  destinasi.reduce((sum, d) => sum + (d.rating || 0), 0) / destinasi.length
-).toFixed(1);
 
 /** Hook kecil: menghitung angka dari 0 -> target, sekali, saat elemen masuk viewport */
 function useCountUp(target, decimals = 0, duration = 1400) {
@@ -77,30 +72,40 @@ const particles = Array.from({ length: 20 }, (_, i) => ({
 
 function Beranda() {
   const { t } = useLanguage();
+  /* Data dari DB (ikut admin CRUD); fallback ke statis bila DB kosong/error */
+  const { destinasi } = usePublicDestinations();
 
-  const stats = [
-    {
-      value: destinasi.length,
-      decimals: 0,
-      suffix: "+",
-      label: t("stats.destinations"),
-    },
-    { value: 1.2, decimals: 1, suffix: "M", label: t("stats.visitors") },
-    {
-      value: uniqueKecamatan,
-      decimals: 0,
-      suffix: "",
-      label: t("stats.districts"),
-    },
-    {
-      value: parseFloat(avgRating),
-      decimals: 1,
-      suffix: "",
-      label: t("stats.rating"),
-    },
-  ];
-
-  const destinasiPopuler = destinasi.slice(0, 3);
+  const { stats, destinasiPopuler } = useMemo(() => {
+    const uniqueKecamatan = new Set(destinasi.map((d) => d.kecamatan)).size;
+    const avgRating =
+      destinasi.length > 0
+        ? destinasi.reduce((sum, d) => sum + (d.rating || 0), 0) / destinasi.length
+        : 0;
+    return {
+      stats: [
+        {
+          value: destinasi.length,
+          decimals: 0,
+          suffix: "+",
+          label: t("stats.destinations"),
+        },
+        { value: 1.2, decimals: 1, suffix: "M", label: t("stats.visitors") },
+        {
+          value: uniqueKecamatan,
+          decimals: 0,
+          suffix: "",
+          label: t("stats.districts"),
+        },
+        {
+          value: parseFloat(avgRating.toFixed(1)),
+          decimals: 1,
+          suffix: "",
+          label: t("stats.rating"),
+        },
+      ],
+      destinasiPopuler: destinasi.slice(0, 3),
+    };
+  }, [destinasi, t]);
 
   return (
     <>

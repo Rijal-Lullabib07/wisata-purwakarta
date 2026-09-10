@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import destinasi from '../data/destinasi'
+import { usePublicDestinations } from '../hooks/useDestinations'
 import { trackDestinationClick } from '../lib/tracking'
 import { useLanguage } from '../i18n/LanguageContext'
 
@@ -22,8 +22,13 @@ const fasilitasLabels = {
 
 function getFasilitasList(fasilitas) {
   if (!fasilitas) return []
-  return Object.entries(fasilitas)
-    .filter(([, v]) => v)
+  /* Bentuk data bisa object ({toilet:true}) dari data statis/impor,
+     atau array (['Toilet','Parkir']) dari baris DB — dukung keduanya. */
+  const entries = Array.isArray(fasilitas)
+    ? fasilitas.map((f) => [typeof f === 'string' ? f : f?.label || f?.key, true])
+    : Object.entries(fasilitas)
+  return entries
+    .filter(([k, v]) => k && v)
     .map(([key]) => ({ key, ...fasilitasLabels[key] || { icon: '✅', label: key } }))
 }
 
@@ -31,19 +36,25 @@ function Destinasi() {
   const { t } = useLanguage()
   const [filter, setFilter] = useState('Semua')
   const [search, setSearch] = useState('')
+  /* Data utama dari DB (ikut admin CRUD); fallback ke statis bila DB kosong/error */
+  const { destinasi, sumber } = usePublicDestinations()
 
-  const kategoriList = useMemo(() => ['Semua', ...new Set(destinasi.map(d => d.kategori))], [])
+  const kategoriList = useMemo(() => ['Semua', ...new Set(destinasi.map(d => d.kategori))], [destinasi])
 
   const filtered = useMemo(() => {
+    /* Null-safe: baris dari DB bisa punya kategori/kecamatan/alamat NULL —
+       memanggil .toLowerCase() pada null bikin halaman blank. */
+    const q = search.trim().toLowerCase()
     return destinasi.filter(d => {
       const matchKategori = filter === 'Semua' || d.kategori === filter
-      const matchSearch = search === '' ||
-        d.nama.toLowerCase().includes(search.toLowerCase()) ||
-        d.kecamatan.toLowerCase().includes(search.toLowerCase()) ||
-        d.alamat.toLowerCase().includes(search.toLowerCase())
+      const matchSearch = q === '' ||
+        String(d.nama || '').toLowerCase().includes(q) ||
+        String(d.kecamatan || '').toLowerCase().includes(q) ||
+        String(d.alamat || '').toLowerCase().includes(q) ||
+        String(d.deskripsi || '').toLowerCase().includes(q)
       return matchKategori && matchSearch
     })
-  }, [filter, search])
+  }, [destinasi, filter, search])
 
   return (
     <section className="page-section destinasi-section">
@@ -54,6 +65,7 @@ function Destinasi() {
           <h1 className="section-title">{t('dest.title')}</h1>
           <p className="section-desc">
             {t('dest.desc', { count: destinasi.length })}
+            {sumber === 'statis' && ' (mode offline — data contoh)'}
           </p>
         </div>
       </div>
@@ -88,6 +100,7 @@ function Destinasi() {
 
         <div className="destinasi-count">
           {t('dest.showing')} <strong>{filtered.length}</strong> {t('dest.of')} {destinasi.length} {t('dest.destWord')}
+          {sumber === 'db+statis' && ' — sebagian dari database, sisanya data awal (impor lewat panel admin)'}
         </div>
 
         <div className="destinasi-grid">
@@ -97,7 +110,11 @@ function Destinasi() {
             return (
               <div className="dest-card" key={i} onClick={() => trackDestinationClick(d)}>
                 <Link to={detailTo} className="dest-image" aria-label={`Lihat detail ${d.nama}`}>
-                  <img src={d.gambar} alt={d.nama} loading="lazy" />
+                  {d.gambar ? (
+                    <img src={d.gambar} alt={d.nama} loading="lazy" />
+                  ) : (
+                    <span className="dest-image-fallback" aria-hidden="true">🏞️</span>
+                  )}
                   <span className="dest-badge">{d.kategori}</span>
                   {d.rating && (
                     <span className="dest-rating">⭐ {d.rating}</span>
@@ -107,7 +124,7 @@ function Destinasi() {
                   <h3 className="dest-name">
                     <Link to={detailTo}>{d.nama}</Link>
                   </h3>
-                  <p className="dest-kecamatan">📍 {d.kecamatan}</p>
+                  {d.kecamatan && <p className="dest-kecamatan">📍 {d.kecamatan}</p>}
                   <p className="dest-desc">{d.deskripsi}</p>
                   <div className="dest-info">
                     {d.alamat && <span className="dest-info-item">🗺️ {d.alamat}</span>}

@@ -1,0 +1,32 @@
+{
+  "name": "Purwakarta Wisata — Kota Istimewa",
+  "short_name": "Purwakarta",
+  "description": "Jelajahi keindahan alam, budaya, dan sejarah Kabupaten Purwakarta. 60+ destinasi wisata menanti Anda.",
+  "lang": "id",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0f1c",
+  "theme_color": "#0a0f1c",
+  "icons": [
+    {
+      "src": "/pwa-192.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    }
+  ]
+}

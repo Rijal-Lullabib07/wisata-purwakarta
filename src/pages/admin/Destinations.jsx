@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase, isSupabaseReady } from '../../lib/supabase'
-import { useAdminDestinations } from '../../hooks/useDestinations'
+import { useAdminDestinations, importStatisKeDb } from '../../hooks/useDestinations'
 import { useCategories } from '../../hooks/useCategories'
 import { useToast, TableSkeleton, ConfirmModal } from '../../components/admin/ui'
 import { useImageUploader } from '../../hooks/useImageUploader'
+import destinasiStatis from '../../data/destinasi'
 
 export default function Destinations() {
   const navigate = useNavigate()
@@ -20,8 +21,22 @@ export default function Destinations() {
   const [selected, setSelected] = useState(new Set())
   const [hapusTarget, setHapusTarget] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [importing, setImporting] = useState(false)
 
   const { rows, count, pages, loading, refresh } = useAdminDestinations({ page, search, kategori, status })
+
+  /** Impor 60 destinasi statis ke DB (yang sudah ada di-skip, tidak ditimpa). */
+  async function importStatis() {
+    setImporting(true)
+    const { inserted, error } = await importStatisKeDb()
+    setImporting(false)
+    if (error) toast.error(`Impor gagal: ${error.message}`)
+    else if (inserted === 0) toast.success('Tidak ada yang perlu diimpor — semua destinasi statis sudah ada di database.')
+    else {
+      toast.success(`${inserted} destinasi diimpor dari data statis.`)
+      refresh()
+    }
+  }
 
   async function togglePublish(id, nilai) {
     const { error } = await supabase.from('destinations').update({ is_published: nilai }).eq('id', id)
@@ -77,7 +92,17 @@ export default function Destinations() {
           <h2>Destinasi</h2>
           <p className="adm-muted">{count} destinasi terdaftar</p>
         </div>
-        <Link to="/panel-kj29xz/destinasi/baru" className="adm-btn adm-btn-primary">+ Destinasi Baru</Link>
+        <div className="adm-head-actions">
+          <button
+            className="adm-btn adm-btn-ghost"
+            onClick={importStatis}
+            disabled={importing}
+            title={`Impor ${destinasiStatis.length} destinasi dari data statis ke database`}
+          >
+            {importing ? 'Mengimpor…' : `⤓ Impor ${destinasiStatis.length} destinasi`}
+          </button>
+          <Link to="/panel-kj29xz/destinasi/baru" className="adm-btn adm-btn-primary">+ Destinasi Baru</Link>
+        </div>
       </div>
 
       <div className="adm-filters">

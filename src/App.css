@@ -61,6 +61,23 @@ img {
   display: block;
 }
 
+/* ---------- RESPONSIVENESS SENTUH (MOBILE/PWA) ----------
+   Hapus delay tap 300ms bawaan browser & hilangkan highlight biru saat tap,
+   supaya semua tombol (termasuk switcher bahasa) merespons seketika di HP. */
+button,
+[role='button'],
+input[type='submit'],
+input[type='checkbox'],
+select,
+label {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: inherit;
+}
+
 /* ---------- NAVBAR ---------- */
 .navbar {
   position: fixed;
@@ -72,6 +89,24 @@ img {
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   animation: navDrop 0.7s ease both;
+}
+
+/* Navbar versi mobile: tanpa blur & tanpa animasi drop — blur backdrop-filter
+   di GPU HP low-end membuat SEMUA tap (termasuk switcher bahasa) terasa telat. */
+@media (max-width: 768px) {
+  .navbar {
+    background: rgba(10, 15, 28, 0.96);
+    backdrop-filter: none;
+    animation: none;
+    /* Sadar notch/status-bar iPhone (PWA standalone mode) */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Menu fixed perlu turun sejauh navbar + safe-area atas */
+  .nav-links {
+    top: calc(68px + env(safe-area-inset-top));
+  }
 }
 
 .nav-container {
@@ -166,6 +201,11 @@ img {
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
+  /* Mobile: matikan delay tap & cegah double-tap-zoom saat ganti bahasa */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .lang-globe {
@@ -188,17 +228,20 @@ img {
 .lang-option {
   display: grid;
   place-items: center;
-  width: 31px;
-  height: 28px;
+  /* Touch target >= 40px — tombol kecil (<30px) terasa "tidak berfungsi" di HP */
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--text-secondary);
-  font: 700 0.65rem/1 inherit;
+  font: 700 0.72rem/1 inherit;
   letter-spacing: 0.04em;
   cursor: pointer;
-  transition: var(--transition);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .lang-option:hover,
@@ -206,6 +249,13 @@ img {
   border-color: rgba(52, 211, 153, 0.4);
   background: rgba(16, 185, 129, 0.2);
   color: var(--primary-light);
+}
+
+/* Feedback instan saat disentuh di layar sentuh (sebelum :hover sempat jalan) */
+.lang-option:active {
+  background: rgba(16, 185, 129, 0.35);
+  color: #fff;
+  transform: scale(0.94);
 }
 
 @keyframes navDrop {
@@ -224,9 +274,11 @@ img {
   background: none;
   border: none;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   position: relative;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .hamburger,
@@ -848,6 +900,16 @@ img {
   position: relative;
   height: 220px;
   overflow: hidden;
+}
+
+/* Kartu tanpa foto (baris DB tanpa galeri) tetap rapi */
+.dest-image-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 3rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.08));
 }
 
 .dest-image img {
@@ -1647,7 +1709,9 @@ img {
 @media (max-width: 768px) {
   .nav-container {
     height: 68px;
-    padding: 0 16px;
+    padding-top: env(safe-area-inset-top);
+    height: calc(68px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 16px 0;
   }
 
   .brand-logo {
@@ -1664,20 +1728,21 @@ img {
   }
 
   .lang-switcher {
-    gap: 3px;
+    gap: 2px;
     padding: 3px;
   }
 
   .lang-globe {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     font-size: 0.8rem;
   }
 
+  /* Jangan kecilkan lagi di HP — 40px adalah batas nyaman jempol */
   .lang-option {
-    width: 27px;
-    height: 27px;
-    font-size: 0.59rem;
+    width: 40px;
+    height: 40px;
+    font-size: 0.68rem;
   }
 
   .nav-links {
@@ -1685,15 +1750,16 @@ img {
     top: 72px;
     left: 0;
     right: 0;
-    background: rgba(10, 15, 28, 0.95);
-    backdrop-filter: blur(20px);
+    /* Blur 20px di mobile mahal & bikin seluruh navbar terasa lambat */
+    background: rgba(10, 15, 28, 0.97);
     flex-direction: column;
     padding: 16px;
     gap: 4px;
     border-bottom: 1px solid var(--border);
     transform: translateY(-120%);
     opacity: 0;
-    transition: var(--transition);
+    /* Transisi pendek + hanya transform/opacity = menu terasa instan */
+    transition: transform 0.18s ease, opacity 0.18s ease;
   }
 
   .nav-links.active {
@@ -1703,6 +1769,22 @@ img {
 
   .nav-toggle {
     display: block;
+  }
+
+  .nav-toggle:active .hamburger {
+    background: var(--primary-light);
+  }
+
+  .nav-links a {
+    /* Link menu full-tap di HP: lebih besar dari sebelumnya (8px 18px) */
+    display: block;
+    padding: 14px 18px;
+    min-height: 48px;
+  }
+
+  .nav-links a:active {
+    color: var(--primary-light);
+    background: rgba(16, 185, 129, 0.18);
   }
 
   .destinasi-grid {
@@ -1749,6 +1831,20 @@ img {
 .hero-bg-image {
   animation: modernHeroZoom 18s ease-in-out infinite alternate;
   will-change: transform;
+}
+
+/* Mobile: partikel & animasi zoom hero menghabiskan GPU HP low-end.
+   Dimatikan di layar kecil supaya seluruh halaman (termasuk switcher bahasa)
+   terasa responsif. */
+@media (max-width: 768px) {
+  .hero-bg-image {
+    animation: none;
+    will-change: auto;
+  }
+
+  .hero-particles {
+    display: none;
+  }
 }
 
 .hero-content {
@@ -1800,13 +1896,8 @@ img {
   left: 135%;
 }
 
-.dest-card,
-.budaya-card,
-.kontak-card,
-.highlight-item,
-.timeline-content {
-  will-change: transform;
-}
+/* will-change dipakai hemat: memaksa layer GPU untuk puluhan kartu membuat
+   HP low-end kehabisan memori & seluruh UI terasa lambat. */
 
 .dest-card:hover,
 .kontak-card:hover,
@@ -1931,6 +2022,16 @@ img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Destinasi DB tanpa galeri: hero tetap rapi */
+.detail-hero-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 4rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(6, 182, 212, 0.1));
 }
 
 .detail-hero-overlay {
@@ -2101,6 +2202,8 @@ img {
 
 /* ---------- DASHBOARD STATISTIK ---------- */
 .statistik-page {
+  /* Navbar fixed setinggi ~72px — tanpa ini header & tombol ketutup */
+  padding-top: 104px;
   padding-bottom: 80px;
 }
 
@@ -2113,6 +2216,14 @@ img {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.stat-ekspor-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
 }
 
 .stat-setup-list code {
@@ -2347,6 +2458,63 @@ img {
   }
   .chart-row .chart-card {
     margin-bottom: 24px;
+  }
+}
+
+/* ---------- POLISH MOBILE/PWA (≤600px) ----------
+   Perapian umum: spacing lebih rapat, kartu nyaman disentuh, tidak overflow. */
+@media (max-width: 600px) {
+  html {
+    scroll-padding-top: 84px;
+  }
+
+  .page-section {
+    padding-top: 84px;
+  }
+
+  .section-container {
+    padding: 0 16px;
+  }
+
+  .destinasi-section,
+  .tentang-section,
+  .kontak-section,
+  .cta-section {
+    padding: 64px 16px;
+  }
+
+  .stats-section {
+    padding: 44px 16px;
+  }
+
+  .dest-card {
+    /* Hilangkan hover-lift di sentuhan: hover "nyangkut" setelah tap di HP */
+    transform: none;
+  }
+
+  .dest-card:active {
+    transform: scale(0.985);
+  }
+
+  .kontak-form-wrapper {
+    padding: 24px 16px;
+  }
+
+  /* Form & kontrol agar mudah disentuh */
+  .form-group input,
+  .form-group textarea,
+  .search-input {
+    min-height: 46px;
+    font-size: 16px; /* cegah auto-zoom Safari saat fokus input */
+  }
+
+  .filter-btn {
+    min-height: 44px;
+    padding: 10px 20px;
+  }
+
+  .btn {
+    min-height: 46px;
   }
 }
 
@@ -2616,7 +2784,9 @@ img {
 .adm-main {
   flex: 1;
   min-width: 0;
-  padding: 28px 32px 48px;
+  /* Admin berada di bawah navbar situs yang fixed (72px) — tanpa clearance
+     ini tombol "+ Destinasi Baru"/"Impor" di pojok kanan atas ketutup. */
+  padding: 96px 32px 48px;
 }
 .adm-page-head {
   display: flex;
@@ -2624,6 +2794,11 @@ img {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.adm-head-actions {
+  display: flex;
+  gap: 10px;
   flex-wrap: wrap;
 }
 .adm-page-head h2 {
@@ -3149,9 +3324,106 @@ textarea.adm-input {
     margin-left: auto;
   }
   .adm-main {
-    padding: 18px 16px 40px;
+    padding: 92px 16px 40px;
   }
   .adm-form-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Admin di HP (≤600px): sidebar jadi top-nav scroll horizontal, grid rapat */
+@media (max-width: 600px) {
+  .adm-sidebar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding: 10px 12px;
+    scrollbar-width: none;
+  }
+  .adm-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+  .adm-sidebar-brand {
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .adm-sidebar-brand .adm-muted {
+    display: none; /* hemat ruang di HP */
+  }
+  .adm-nav {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  .adm-nav-item {
+    white-space: nowrap;
+    padding: 10px 12px;
+  }
+  .adm-logout {
+    flex-shrink: 0;
+  }
+
+  .adm-main {
+    padding: 92px 12px 48px;
+  }
+  .adm-page-head h2 {
+    font-size: 1.25rem;
+  }
+
+  /* Stat 2 kolom di HP (auto-fit bisa bikin 1 kolom sempit/aneh) */
+  .adm-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .adm-stat-card {
+    padding: 14px;
+  }
+  .adm-stat-nilai {
+    font-size: 1.5rem;
+  }
+
+  .adm-head-actions {
+    width: 100%;
+  }
+  .adm-head-actions .adm-btn {
+    flex: 1;
+  }
+
+  .adm-filters .adm-input {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  /* Aksi baris tabel tidak gepeng saat disentuh */
+  .adm-actions .adm-btn {
+    min-height: 36px;
+  }
+
+  .adm-pagination {
+    flex-wrap: wrap;
+    gap: 8px;
+    text-align: center;
+  }
+
+  /* Toast jangan mepet/melebihi layar kecil */
+  .adm-toast-wrap {
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .adm-toast {
+    max-width: none;
+    width: 100%;
+  }
+
+  .adm-modal-body {
+    max-height: 60vh;
+  }
+
+  .adm-form-actions {
+    flex-direction: column-reverse;
+  }
+  .adm-form-actions .adm-btn {
+    width: 100%;
   }
 }

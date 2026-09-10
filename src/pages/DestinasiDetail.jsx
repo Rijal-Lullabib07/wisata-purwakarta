@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import destinasi from '../data/destinasi'
+import { usePublicDestinations } from '../hooks/useDestinations'
 import { mapsDirectionsUrl } from '../lib/tracking'
 
 const PUSAT = { latitude: -6.5569, longitude: 107.4430, nama: 'Pusat Kota Purwakarta' }
@@ -36,11 +36,15 @@ function haversineKm(a, b) {
 const TABS = ['Ringkasan', 'Lokasi & Arah', 'Fasilitas', 'Jam Buka & Harga']
 
 function FasilitasGrid({ fasilitas }) {
-  const list = fasilitas
-    ? Object.entries(fasilitas)
-        .filter(([, v]) => v)
-        .map(([key]) => ({ key, ...(fasilitasLabels[key] || { icon: '✅', label: key }) }))
-    : []
+  /* Dukung dua bentuk data: object ({toilet:true}) & array (['Toilet',...]) dari DB */
+  const entries = !fasilitas
+    ? []
+    : Array.isArray(fasilitas)
+      ? fasilitas.map((f) => [typeof f === 'string' ? f : f?.label || f?.key, true])
+      : Object.entries(fasilitas)
+  const list = entries
+    .filter(([k, v]) => k && v)
+    .map(([key]) => ({ key, ...(fasilitasLabels[key] || { icon: '✅', label: key }) }))
   if (list.length === 0) return <p className="dest-desc">Belum ada data fasilitas.</p>
   return (
     <div className="fasilitas-grid">
@@ -70,43 +74,55 @@ function InfoTab({ destination }) {
 function LokasiTab({ destination }) {
   const lat = destination.latitude
   const lng = destination.longitude
-  const km = haversineKm(PUSAT, destination)
-  const perkiraanMenit = Math.round((km / 40) * 60) // asumsi 40 km/jam
+  const adaKoord = Number.isFinite(lat) && Number.isFinite(lng)
+  const km = adaKoord ? haversineKm(PUSAT, destination) : null
+  const perkiraanMenit = km !== null ? Math.round((km / 40) * 60) : null
 
   return (
     <div className="detail-lokasi">
       <p className="dest-desc" style={{ marginBottom: 16 }}>
-        {destination.alamat || `Kecamatan ${destination.kecamatan}, Purwakarta`}
+        {destination.alamat || (destination.kecamatan ? `Kecamatan ${destination.kecamatan}, Purwakarta` : 'Alamat belum tersedia.')}
       </p>
 
       <div className="map-embed">
-        <iframe
-          title={`Peta ${destination.nama}`}
-          src={`https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          allowFullScreen
-        ></iframe>
-      </div>
-
-      <div className="route-box">
+        {adaKoord ? (
+          <iframe
+            title={`Peta ${destination.nama}`}
+            src={`https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          ></iframe>
+        ) : (
+          <iframe
+            title={`Peta ${destination.nama}`}
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(destination.nama + ' Purwakarta')}&z=13&output=embed`}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          ></iframe>
+        )}
+      </div>      <div className="route-box">
         <div className="route-stats">
           <div>
-            <strong>± {km.toFixed(1)} km</strong>
+            <strong>{km !== null ? `± ${km.toFixed(1)} km` : '—'}</strong>
             <span>dari pusat kota</span>
           </div>
           <div>
-            <strong>± {perkiraanMenit} menit</strong>
+            <strong>{perkiraanMenit !== null ? `± ${perkiraanMenit} menit` : '—'}</strong>
             <span>berkendara (est.)</span>
           </div>
         </div>
+
         <ol className="route-steps">
           <li>
             Mulai dari <strong>Pusat Kota Purwakarta</strong> ({PUSAT.nama}).
           </li>
-          <li>
-            Ikuti jalan utama menuju arah <strong>Kecamatan {destination.kecamatan}</strong>.
-          </li>
+          {destination.kecamatan && (
+            <li>
+              Ikuti jalan utama menuju arah <strong>Kecamatan {destination.kecamatan}</strong>.
+            </li>
+          )}
           <li>Ikuti petunjuk papan/GPS sampai lokasi {destination.nama}.</li>
         </ol>
         <a
@@ -165,10 +181,12 @@ function JamHargaTab({ destination }) {
 function DestinasiDetail() {
   const { slug } = useParams()
   const [tab, setTab] = useState('Ringkasan')
+  /* Data dari DB (ikut admin CRUD); fallback ke statis bila DB kosong/error */
+  const { destinasi } = usePublicDestinations()
 
   const destination = useMemo(
     () => destinasi.find((d) => d.slug === slug) || null,
-    [slug],
+    [destinasi, slug],
   )
 
   useEffect(() => {
@@ -204,7 +222,11 @@ function DestinasiDetail() {
 
         {/* HERO */}
         <div className="detail-hero">
-          <img src={destination.gambar} alt={destination.nama} />
+          {destination.gambar ? (
+            <img src={destination.gambar} alt={destination.nama} />
+          ) : (
+            <div className="detail-hero-fallback" aria-hidden="true">🏞️</div>
+          )}
           <div className="detail-hero-overlay">
             <span className="dest-badge">{destination.kategori}</span>
             <h1 className="detail-title">{destination.nama}</h1>

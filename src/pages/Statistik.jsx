@@ -12,6 +12,12 @@ import {
   Line,
 } from "recharts";
 import { supabase, isSupabaseReady } from "../lib/supabase";
+import {
+  exportToExcel,
+  exportToPdf,
+  stampNamaFile,
+  captureChartSvg,
+} from "../lib/exportData";
 
 const HOUR_COLORS = ["#0f172a", "#134e4a", "#065f46", "#059669", "#34d399"];
 
@@ -255,6 +261,84 @@ function Statistik() {
   const hourly = eda?.by_hour ?? [];
   const growth = eda?.growth_percent;
 
+  /* ---------- Ekspor Excel & PDF ---------- */
+  function siapkanSections() {
+    return [
+      {
+        title: "Ringkasan",
+        columns: ["Metrik", "Nilai"],
+        rows: [
+          ["Total Klik", total],
+          ["Pengunjung Unik", eda?.total_visitors ?? 0],
+          ["Destinasi Diklik", eda?.total_destinations ?? 0],
+          ["Pertumbuhan Harian (%)", growth ?? "—"],
+        ],
+      },
+      {
+        title: "Klik per Destinasi",
+        columns: ["Destinasi", "Klik"],
+        rows: (eda?.by_destination ?? []).map((d) => [d.nama, d.klik]),
+      },
+      {
+        title: "Tren Klik Harian",
+        columns: ["Tanggal", "Klik"],
+        rows: daily.map((d) => [d.tanggal, d.jumlah]),
+      },
+      {
+        title: "Jam Klik",
+        columns: ["Jam", "Klik"],
+        rows: hourly.map((d) => [`${d.jam}:00`, d.jumlah]),
+      },
+      {
+        title: "Destinasi Terpopuler (Top 5)",
+        columns: ["Peringkat", "Destinasi", "Klik"],
+        rows: top5.map((t, i) => [i + 1, t.nama, t.klik]),
+      },
+      {
+        title: "Log Pengunjung",
+        columns: ["Waktu", "Destinasi", "Kota", "Negara", "Device", "Browser"],
+        rows: visitors.map((v) => [
+          new Date(v.clicked_at).toLocaleString("id-ID"),
+          v.destination_name,
+          v.city || "—",
+          v.country || v.country_code || "—",
+          v.device_type || "—",
+          v.browser ? `${v.browser}${v.os ? " · " + v.os : ""}` : "—",
+        ]),
+      },
+    ];
+  }
+
+  function eksporExcel() {
+    const sections = siapkanSections();
+    exportToExcel(
+      `statistik-purwakarta_${stampNamaFile()}.xlsx`,
+      sections.map((s) => ({
+        name: s.title,
+        rows: s.rows.map((r) =>
+          Object.fromEntries(s.columns.map((c, i) => [c, r[i]])),
+        ),
+      })),
+    );
+  }
+
+  async function eksporPdf() {
+    // Gambar grafik (bar & line) di-capture dari DOM supaya ikut ke PDF
+    const [grafikBar, grafikLine] = await Promise.all([
+      captureChartSvg("#chart-klik-destinasi svg"),
+      captureChartSvg("#chart-tren-harian svg"),
+    ]);
+    const images = [
+      grafikBar && { title: "Grafik: Klik per Destinasi", dataUrl: grafikBar },
+      grafikLine && { title: "Grafik: Tren Klik Harian", dataUrl: grafikLine },
+    ].filter(Boolean);
+    exportToPdf(
+      "Statistik Klik Destinasi — Purwakarta Wisata",
+      siapkanSections(),
+      images,
+    );
+  }
+
   return (
     <section className="page-section statistik-page">
       <div className="section-container">
@@ -264,13 +348,33 @@ function Statistik() {
           <p className="section-desc">
             Pantau destinasi mana yang paling diminati pengunjung.
           </p>
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => supabase.auth.signOut()}
-          >
-            Keluar
-          </button>
+          <div className="stat-ekspor-row">
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={eksporExcel}
+              disabled={total === 0}
+              title="Unduh semua data grafik ke file Excel"
+            >
+              ⤓ Export Excel
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={eksporPdf}
+              disabled={total === 0}
+              title="Simpan semua data grafik sebagai PDF"
+            >
+              🖨 Export PDF
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={() => supabase.auth.signOut()}
+            >
+              Keluar
+            </button>
+          </div>
         </div>
 
         {/* RINGKASAN */}
@@ -304,6 +408,7 @@ function Statistik() {
         {/* BAR CHART */}
         <div className="chart-card">
           <h3>Klik per Destinasi</h3>
+          <div id="chart-klik-destinasi">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
               data={eda?.by_destination ?? []}
@@ -337,11 +442,13 @@ function Statistik() {
               />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* LINE CHART */}
         <div className="chart-card">
           <h3>Tren Klik Harian</h3>
+          <div id="chart-tren-harian">
           <ResponsiveContainer width="100%" height={260}>
             <LineChart
               data={daily}
@@ -371,6 +478,7 @@ function Statistik() {
               />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* TOP 5 + HEATMAP */}

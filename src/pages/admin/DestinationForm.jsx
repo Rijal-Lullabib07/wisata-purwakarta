@@ -33,7 +33,23 @@ export default function DestinationForm() {
     if (!id || !isSupabaseReady) return
     ;(async () => {
       const { data } = await supabase.from('destinations').select('*').eq('id', id).maybeSingle()
-      if (data) setForm({ ...KOSONG, ...data, galeri: data.galeri || [], storage_paths: data.storage_paths || [] })
+      if (data) {
+        /* Kolom teks dari DB bisa NULL → input React jadi uncontrolled
+           (warning "value prop on input should not be null"). Normalisasi
+           semua field teks ke string kosong. */
+        const TEKS = [
+          'nama', 'slug', 'deskripsi', 'kategori', 'kecamatan', 'alamat',
+          'latitude', 'longitude', 'harga_tiket', 'jam_operasional',
+          'telepon', 'rating', 'maps_url', 'meta_title', 'meta_description',
+        ]
+        const bersih = { ...KOSONG, ...data }
+        for (const k of TEKS) {
+          if (bersih[k] === null || bersih[k] === undefined) bersih[k] = ''
+        }
+        bersih.galeri = Array.isArray(data.galeri) ? data.galeri : []
+        bersih.storage_paths = Array.isArray(data.storage_paths) ? data.storage_paths : []
+        setForm(bersih)
+      }
       setLoading(false)
     })()
   }, [id])
@@ -45,56 +61,85 @@ export default function DestinationForm() {
 
   function validasi() {
     const e = {}
-    if (!form.nama.trim()) e.nama = 'Nama wajib diisi.'
-    if (form.nama.trim() && form.nama.trim().length < 3) e.nama = 'Nama minimal 3 karakter.'
-    if (!form.deskripsi.trim()) e.deskripsi = 'Deskripsi wajib diisi.'
+    /* Semua field dibaca null-safe: baris dari DB bisa punya deskripsi/alamat
+       NULL, dan .trim() pada null dulu melempar TypeError yang membuat tombol
+       Simpan mati total tanpa pesan apa pun. */
+    const nama = String(form.nama || '').trim()
+    const deskripsi = String(form.deskripsi || '').trim()
+    const alamat = String(form.alamat || '').trim()
+    const telepon = String(form.telepon || '').trim()
+    if (!nama) e.nama = 'Nama wajib diisi.'
+    else if (nama.length < 3) e.nama = 'Nama minimal 3 karakter.'
+    if (!deskripsi) e.deskripsi = 'Deskripsi wajib diisi.'
     if (!form.kategori) e.kategori = 'Kategori wajib dipilih.'
-    if (!form.alamat.trim()) e.alamat = 'Alamat wajib diisi.'
+    if (!alamat) e.alamat = 'Alamat wajib diisi.'
     if (form.latitude && Number.isNaN(Number(form.latitude))) e.latitude = 'Latitude harus angka.'
     if (form.longitude && Number.isNaN(Number(form.longitude))) e.longitude = 'Longitude harus angka.'
     if (form.rating && (Number(form.rating) < 0 || Number(form.rating) > 5)) e.rating = 'Rating 0–5.'
-    if (form.telepon && !/^[0-9+\-\s()]{6,20}$/.test(form.telepon)) e.telepon = 'Format telepon tidak valid.'
+    if (telepon && !/^[0-9+\-\s()]{6,20}$/.test(telepon)) e.telepon = 'Format telepon tidak valid.'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
   async function simpan(event) {
     event.preventDefault()
-    if (!validasi()) return toast.error('Periksa kembali form — ada isian yang belum benar.')
-    setBusy(true)
-
-    const baris = {
-      nama: form.nama.trim(),
-      slug: form.slug?.trim() || buatSlug(form.nama),
-      deskripsi: form.deskripsi,
-      kategori: form.kategori,
-      kecamatan: form.kecamatan || null,
-      alamat: form.alamat,
-      latitude: form.latitude ? Number(form.latitude) : null,
-      longitude: form.longitude ? Number(form.longitude) : null,
-      harga_tiket: form.harga_tiket || null,
-      jam_operasional: form.jam_operasional || null,
-      telepon: form.telepon || null,
-      rating: form.rating ? Number(form.rating) : null,
-      maps_url: form.maps_url || null,
-      galeri: form.galeri,
-      storage_paths: form.storage_paths,
-      meta_title: form.meta_title || null,
-      meta_description: form.meta_description || null,
-      is_published: form.is_published,
-    }
-
-    const { error } = id
-      ? await supabase.from('destinations').update(baris).eq('id', id)
-      : await supabase.from('destinations').insert(baris)
-
-    setBusy(false)
-    if (error) {
-      toast.error(error.code === '23505' ? 'Slug sudah dipakai destinasi lain.' : 'Gagal menyimpan destinasi.')
+    if (busy) return // cegah dobel-submit
+    if (!isSupabaseReady) {
+      toast.error('Supabase belum dikonfigurasi — isi VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY di .env.')
       return
     }
-    toast.success(id ? 'Perubahan tersimpan.' : 'Destinasi baru dibuat.')
-    navigate('/panel-kj29xz/destinasi')
+    if (!validasi()) {
+      toast.error('Periksa kembali form — ada isian yang belum benar.')
+      return
+    }
+    setBusy(true)
+
+    try {
+      const baris = {
+        nama: String(form.nama || '').trim(),
+        slug: String(form.slug || '').trim() || buatSlug(String(form.nama || '')),
+        deskripsi: form.deskripsi ?? null,
+        kategori: form.kategori || null,
+        kecamatan: form.kecamatan || null,
+        alamat: form.alamat || null,
+        latitude: form.latitude ? Number(form.latitude) : null,
+        longitude: form.longitude ? Number(form.longitude) : null,
+        harga_tiket: form.harga_tiket || null,
+        jam_operasional: form.jam_operasional || null,
+        telepon: form.telepon || null,
+        rating: form.rating ? Number(form.rating) : null,
+        maps_url: form.maps_url || null,
+        galeri: Array.isArray(form.galeri) ? form.galeri : [],
+        storage_paths: Array.isArray(form.storage_paths) ? form.storage_paths : [],
+        meta_title: form.meta_title || null,
+        meta_description: form.meta_description || null,
+        is_published: Boolean(form.is_published),
+      }
+
+      const { error } = id
+        ? await supabase.from('destinations').update(baris).eq('id', id)
+        : await supabase.from('destinations').insert(baris)
+
+      if (error) {
+        // Tampilkan pesan asli supaya masalah (RLS/slug/dll) terlihat jelas
+        const pesan =
+          error.code === '23505'
+            ? 'Slug sudah dipakai destinasi lain.'
+            : `Gagal menyimpan: ${error.message || 'error tidak diketahui'}`
+        console.error('[DestinationForm] supabase error:', error)
+        toast.error(pesan)
+        return
+      }
+
+      toast.success(id ? 'Perubahan tersimpan.' : 'Destinasi baru dibuat.')
+      navigate('/panel-kj29xz/destinasi')
+    } catch (err) {
+      // Dulu: exception di sini mati senyap → tombol terkunci & "tidak ada reaksi".
+      console.error('[DestinationForm] gagal menyimpan:', err)
+      toast.error(`Terjadi kesalahan: ${err?.message || err}`)
+    } finally {
+      setBusy(false) // SELALU pulihkan tombol, apa pun hasilnya
+    }
   }
 
   if (loading) return <p className="adm-muted">Memuat data destinasi…</p>

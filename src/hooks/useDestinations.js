@@ -4,6 +4,14 @@ import destinasiStatis from '../data/destinasi'
 
 const PAGE_SIZE = 10
 
+const slugify = (text = '') =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+
 /**
  * Daftar destinasi untuk admin panel (termasuk draft).
  * Pagination server-side + search + filter kategori/status.
@@ -48,6 +56,48 @@ export function useAdminDestinations({ page = 1, search = '', kategori = '', sta
   return { rows, count, pages: Math.max(1, Math.ceil(count / PAGE_SIZE)), loading, error, refresh, PAGE_SIZE }
 }
 
+/**
+ * Ubah 1 destinasi statis (src/data/destinasi.js) ke bentuk baris tabel
+ * `destinations`. Dipakai fitur import massal di panel admin.
+ */
+export function destinasiStatisToRow(d) {
+  return {
+    slug: d.slug || slugify(d.nama),
+    nama: d.nama,
+    kategori: d.kategori || null,
+    kecamatan: d.kecamatan || null,
+    deskripsi: d.deskripsi || null,
+    alamat: d.alamat || null,
+    latitude: d.latitude ?? null,
+    longitude: d.longitude ?? null,
+    jam_operasional: d.jam || null,
+    telepon: d.telepon || null,
+    rating: d.rating ?? null,
+    ulasan: d.ulasan ?? null,
+    fasilitas: d.fasilitas || {},
+    galeri: d.gambar ? [d.gambar] : [],
+    maps_url: d.maps || null,
+    is_published: true,
+  }
+}
+
+/**
+ * Import massal destinasi statis (60 item) ke DB.
+ * - on-conflict slug → di-skip (DO NOTHING) supaya data yang sudah diedit
+ *   admin tidak tertimpa.
+ * - Mengembalikan jumlah baris baru yang benar-benar ditambahkan.
+ */
+export async function importStatisKeDb() {
+  if (!isSupabaseReady) return { inserted: 0, error: new Error('Supabase belum dikonfigurasi.') }
+  const rows = destinasiStatis.map(destinasiStatisToRow)
+  const { data, error } = await supabase
+    .from('destinations')
+    .upsert(rows, { onConflict: 'slug', ignoreDuplicates: true })
+    .select('id')
+  if (error) return { inserted: 0, error }
+  return { inserted: (data || []).length, error: null }
+}
+
 /** Ubah baris DB ke bentuk yang dipakai komponen publik (fallback statis). */
 export function dbRowToDestinasi(row) {
   return {
@@ -69,11 +119,14 @@ export function dbRowToDestinasi(row) {
     fasilitas: row.fasilitas || {},
     slug: row.slug,
   }
-}
-
-/**
- * Destinasi ter-publish untuk halaman publik — dari DB, fallback ke statis.
- * Fallback aktif bila DB belum dikonfigurasi, error, atau kosong.
+}/**
+ * Destinasi ter-publish untuk halaman publik.
+ * - DB belum siap/error  → tampilkan data statis (60 destinasi) supaya situs
+ *   tidak pernah kosong.
+ * - DB berisi sebagian   → GABUNGkan: baris DB ditampilkan duluan, lalu
+ *   destinasi statis yang slug-nya belum ada di DB (jadi 60 selalu tampil,
+ *   apa pun isi DB — tanpa duplikat).
+ * - DB berisi semua 60   → murni data DB (hasil CRUD admin).
  */
 export function usePublicDestinations() {
   const [destinasi, setDestinasi] = useState(destinasiStatis)
@@ -89,10 +142,13 @@ export function usePublicDestinations() {
         .eq('is_published', true)
         .order('nama')
       if (!active) return
-      if (!error && data && data.length > 0) {
-        setDestinasi(data.map(dbRowToDestinasi))
-        setSumber('db')
-      }
+      if (error || !data) return // tetap statis
+      const fromDb = data.map(dbRowToDestinasi)
+      const slugsDb = new Set(fromDb.map((d) => d.slug).filter(Boolean))
+      const sisastatis = destinasiStatis.filter((d) => !slugsDb.has(d.slug))
+      const gabungan = [...fromDb, ...sisastatis]
+      setDestinasi(gabungan)
+      setSumber(fromDb.length === 0 ? 'statis' : sisastatis.length > 0 ? 'db+statis' : 'db')
     })()
     return () => { active = false }
   }, [])

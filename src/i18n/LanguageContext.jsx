@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import { translations } from './translations'
 
 const LANGUAGE_KEY = 'pw-lang'
@@ -48,11 +48,12 @@ export function LanguageProvider({ children }) {
     [lang],
   )
 
-  return (
-    <LanguageContext.Provider value={{ lang, setLang, t }}>
-      {children}
-    </LanguageContext.Provider>
-  )
+  /* Value di-memoize: tanpa ini objek context baru setiap render membuat
+     seluruh tree ikut re-render setiap kali Provider render → di HPlow-end
+     terasa seperti UI "nyangkut" saat ganti bahasa. */
+  const value = useMemo(() => ({ lang, setLang, t }), [lang, t])
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
 }
 
 export function useLanguage() {

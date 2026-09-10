@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { supabase, isSupabaseReady } from '../../lib/supabase'
 import { TableSkeleton } from '../../components/admin/ui'
+import { exportToExcel, exportToPdf, stampNamaFile, captureChartSvg } from '../../lib/exportData'
 
 const tooltipStyle = {
   background: '#111827',
@@ -82,6 +83,69 @@ export default function Dashboard() {
   const perDestinasi = eda?.by_destination ?? []
   const trenHarian = eda?.daily_trend ?? []
   const top5 = eda?.top5 ?? []
+  const visitorTerakhir = visitors ?? []
+
+  /* ---------- Ekspor Excel & PDF ---------- */
+  function siapkanSections() {
+    return [
+      {
+        title: 'Ringkasan',
+        columns: ['Metrik', 'Nilai'],
+        rows: [
+          ['Total Klik', eda?.total_clicks ?? 0],
+          ['Pengunjung Unik', eda?.total_visitors ?? 0],
+          ['Destinasi Diklik', eda?.total_destinations ?? 0],
+          ['Pertumbuhan Harian (%)', growth ?? '—'],
+        ],
+      },
+      {
+        title: 'Klik per Destinasi',
+        columns: ['Destinasi', 'Klik'],
+        rows: perDestinasi.map((d) => [d.nama, d.klik]),
+      },
+      {
+        title: 'Tren Klik Harian',
+        columns: ['Tanggal', 'Klik'],
+        rows: trenHarian.map((d) => [d.tanggal, d.jumlah]),
+      },
+      {
+        title: 'Destinasi Terpopuler (Top 5)',
+        columns: ['Peringkat', 'Destinasi', 'Klik'],
+        rows: top5.map((t, i) => [i + 1, t.nama, t.klik]),
+      },
+      {
+        title: 'Pengunjung Terakhir',
+        columns: ['Waktu', 'Destinasi', 'Kota', 'Device', 'Browser'],
+        rows: visitorTerakhir.map((v) => [
+          new Date(v.clicked_at).toLocaleString('id-ID'),
+          v.destination_name,
+          v.city || v.country || '—',
+          v.device_type || '—',
+          v.browser ? `${v.browser}${v.os ? ' · ' + v.os : ''}` : '—',
+        ]),
+      },
+    ]
+  }
+
+  function eksporExcel() {
+    const sections = siapkanSections()
+    exportToExcel(`statistik-purwakarta_${stampNamaFile()}.xlsx`,
+      sections.map((s) => ({ name: s.title, rows: s.rows.map((r) => Object.fromEntries(s.columns.map((c, i) => [c, r[i]]))) }))
+    )
+  }
+
+  async function eksporPdf() {
+    // Gambar grafik (bar & line) di-capture dari DOM supaya ikut ke PDF
+    const [grafikBar, grafikLine] = await Promise.all([
+      captureChartSvg('#chart-klik-destinasi svg'),
+      captureChartSvg('#chart-tren-harian svg'),
+    ])
+    const images = [
+      grafikBar && { title: 'Grafik: Klik per Destinasi', dataUrl: grafikBar },
+      grafikLine && { title: 'Grafik: Tren Klik Harian', dataUrl: grafikLine },
+    ].filter(Boolean)
+    exportToPdf('Statistik Kunjungan — Purwakarta Wisata', siapkanSections(), images)
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
@@ -111,7 +175,16 @@ export default function Dashboard() {
 
       {/* Analitik klik */}
       <div className="adm-page-head" style={{ marginTop: 10 }}>
-        <h2 style={{ fontSize: '1.15rem' }}>Statistik Kunjungan</h2>
+        <div>
+          <h2 style={{ fontSize: '1.15rem' }}>Statistik Kunjungan</h2>
+          <p className="adm-muted">Klik, pengunjung & destinasi terpopuler</p>
+        </div>
+        {!analyticsErr && (
+          <div className="adm-head-actions">
+            <button className="adm-btn adm-btn-ghost" onClick={eksporExcel} disabled={loading}>⤓ Excel</button>
+            <button className="adm-btn adm-btn-ghost" onClick={eksporPdf} disabled={loading}>🖨 PDF</button>
+          </div>
+        )}
       </div>
       {analyticsErr ? (
         <p className="adm-empty">Data klik belum tersedia ({analyticsErr}).</p>
@@ -136,6 +209,7 @@ export default function Dashboard() {
           <div className="chart-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
             <div className="chart-card">
               <h3>Klik per Destinasi</h3>
+              <div id="chart-klik-destinasi">
               {loading ? (
                 <TableSkeleton rows={4} cols={3} />
               ) : perDestinasi.length === 0 ? (
@@ -151,10 +225,12 @@ export default function Dashboard() {
                   </BarChart>
                 </ResponsiveContainer>
               )}
+              </div>
             </div>
 
             <div className="chart-card">
               <h3>Tren Klik Harian</h3>
+              <div id="chart-tren-harian">
               {loading ? (
                 <TableSkeleton rows={4} cols={3} />
               ) : trenHarian.length === 0 ? (
@@ -170,6 +246,7 @@ export default function Dashboard() {
                   </LineChart>
                 </ResponsiveContainer>
               )}
+              </div>
             </div>
           </div>
 
