@@ -132,13 +132,13 @@ export async function exportToPdf(title, sections, images = []) {
   <p class="sub">Diekspor: ${new Date().toLocaleString('id-ID')} — Purwakarta Wisata</p>
   ${gambar}
   ${bagian}
-  <script>
+  <scr${''}ipt>
     window.onload = () => {
       const imgs = Array.from(document.images)
       Promise.all(imgs.map((i) => i.complete ? 0 : new Promise((r) => { i.onload = r; i.onerror = r })))
         .then(() => setTimeout(() => window.print(), 250))
     }
-  <\/script>
+  </scr${''}ipt>
 </body></html>`)
   win.document.close()
 }

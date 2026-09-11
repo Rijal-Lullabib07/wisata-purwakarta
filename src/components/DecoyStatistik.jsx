@@ -157,6 +157,8 @@ export default function DecoyStatistik() {
           .ds-bar-fill { transition: none !important; }
         }
         .ds-page { position: relative; overflow: hidden; }
+        /* Bingkai konten: sebelumnya full-bleed menempel tepi layar */
+        .ds-wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; position: relative; }
         .ds-eyebrow {
           text-align: center; letter-spacing: 3px; font-size: 13px; color: #2dd4a7;
           text-transform: uppercase; animation: ds-rise .7s ease both;
@@ -193,6 +195,19 @@ export default function DecoyStatistik() {
         .ds-top-card:hover { transform: translateY(-3px); border-color: rgba(45,212,167,.4); }
         .ds-source { font-size: 12px; opacity: .6; text-align: center; }
         .ds-source a { color: #2dd4a7; }
+        /* ---- Mobile: kartu & bar dirapatkan, tidak memanjang ---- */
+        @media (max-width: 600px) {
+          .ds-wrap { padding: 0 14px; }
+          .ds-page { padding-top: 84px !important; }
+          .ds-subtitle { margin-bottom: 20px; }
+          .ds-card { flex: 1 1 44%; max-width: none; padding: 14px 10px; }
+          .ds-card-angka { font-size: 21px; }
+          .ds-card-label { font-size: 11.5px; }
+          .ds-chart { min-width: 100% !important; }
+          .ds-top-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+          .ds-top-card { padding: 12px 14px; }
+          .ds-source { padding: 0 10px; }
+        }
       `}</style>
 
       {/* dekorasi latar: planet & titik mengapung */}
@@ -207,47 +222,49 @@ export default function DecoyStatistik() {
       <span className="ds-deco ds-dot" style={{ top: 320, right: "12%", width: 8, height: 8, borderRadius: "50%", background: "#5b8def", animation: "ds-pulse 3s ease-in-out infinite" }} />
       <span className="ds-deco ds-dot" style={{ top: 90, left: "18%", width: 6, height: 6, borderRadius: "50%", background: "#2dd4a7", animation: "ds-pulse 2.2s .8s ease-in-out infinite" }} />
 
-      <p className="ds-eyebrow">Data Pariwisata</p>
-      <h2 className="ds-title">Statistik Wisata Purwakarta</h2>
-      <p className="ds-subtitle">
-        Gambaran umum potensi pariwisata Kabupaten Purwakarta berdasarkan data publik.
-      </p>
+      <div className="ds-wrap">
+        <p className="ds-eyebrow">Data Pariwisata</p>
+        <h2 className="ds-title">Statistik Wisata Purwakarta</h2>
+        <p className="ds-subtitle">
+          Gambaran umum potensi pariwisata Kabupaten Purwakarta berdasarkan data publik.
+        </p>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center", marginBottom: 40 }}>
-        <KartuAngka angka={bps.wisnus.nilai} label={`Perjalanan Wisnus ke Purwakarta (${bps.wisnus.periode})`} delay={250} />
-        <KartuAngka angka={bps.tpk.nilai} label={`Okupansi Hotel / TPK (${bps.tpk.periode})`} delay={350} />
-        <KartuAngka animasiAngka={stat.total} label="Destinasi Wisata Terdata" delay={450} />
-        <KartuAngka animasiAngka={stat.rataRating} label="Rata-rata Rating Destinasi" delay={550} />
-      </div>
+        <div className="ds-cards" style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center", marginBottom: 40 }}>
+          <KartuAngka angka={bps.wisnus.nilai} label={`Perjalanan Wisnus ke Purwakarta (${bps.wisnus.periode})`} delay={250} />
+          <KartuAngka angka={bps.tpk.nilai} label={`Okupansi Hotel / TPK (${bps.tpk.periode})`} delay={350} />
+          <KartuAngka animasiAngka={stat.total} label="Destinasi Wisata Terdata" delay={450} />
+          <KartuAngka animasiAngka={stat.rataRating} label="Rata-rata Rating Destinasi" delay={550} />
+        </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 44, marginBottom: 40 }}>
-        <BarChart title="Destinasi per Kategori" data={stat.kategori} max={stat.maxKategori} warna="#2dd4a7" />
-        <BarChart title="Destinasi per Kecamatan" data={stat.kecamatan} max={stat.maxKecamatan} warna="#5b8def" satuan="terbanyak" />
-      </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 44, marginBottom: 40 }}>
+          <BarChart title="Destinasi per Kategori" data={stat.kategori} max={stat.maxKategori} warna="#2dd4a7" />
+          <BarChart title="Destinasi per Kecamatan" data={stat.kecamatan} max={stat.maxKecamatan} warna="#5b8def" satuan="terbanyak" />
+        </div>
 
-      <h3 className="ds-chart-title ds-rise" style={{ marginBottom: 14 }}>Rating Tertinggi</h3>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 40 }}>
-        {stat.topRating.map((d, i) => (
-          <div key={d.nama} className="ds-top-card ds-rise" style={{ animationDelay: `${600 + i * 90}ms` }}>
-            <div style={{ fontWeight: 600, fontSize: 14 }}>{d.nama}</div>
-            <div style={{ fontSize: 13, opacity: 0.75, marginTop: 2 }}>
-              {d.rating} ★ · {d.ulasan} ulasan · {d.kecamatan}
+        <h3 className="ds-chart-title ds-rise" style={{ marginBottom: 14 }}>Rating Tertinggi</h3>
+        <div className="ds-top-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 40 }}>
+          {stat.topRating.map((d, i) => (
+            <div key={d.nama} className="ds-top-card ds-rise" style={{ animationDelay: `${600 + i * 90}ms` }}>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{d.nama}</div>
+              <div style={{ fontSize: 13, opacity: 0.75, marginTop: 2 }}>
+                {d.rating} ★ · {d.ulasan} ulasan · {d.kecamatan}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <p className="ds-source ds-rise" style={{ animationDelay: "1s" }}>
-        Sumber:{" "}
-        <a href={SUMBER_BPS} target="_blank" rel="noopener noreferrer">
-          BPS Kabupaten Purwakarta
-        </a>{" "}
-        (Wisnus & TPK Hotel),{" "}
-        <a href={SUMBER_TPK} target="_blank" rel="noopener noreferrer">
-          Rilis TPK Juli 2025
-        </a>
-        , dan data destinasi situs ini.
-      </p>
+        <p className="ds-source ds-rise" style={{ animationDelay: "1s" }}>
+          Sumber:{" "}
+          <a href={SUMBER_BPS} target="_blank" rel="noopener noreferrer">
+            BPS Kabupaten Purwakarta
+          </a>{" "}
+          (Wisnus & TPK Hotel),{" "}
+          <a href={SUMBER_TPK} target="_blank" rel="noopener noreferrer">
+            Rilis TPK Juli 2025
+          </a>
+          , dan data destinasi situs ini.
+        </p>
+      </div>
     </section>
   );
 }
