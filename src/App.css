@@ -1794,8 +1794,10 @@ button {
   }
 
   .brand-text {
-    /* Jangan biarkan teks brand mendorong switcher/hamburger keluar layar */
-    max-width: 30vw;
+    /* Jangan biarkan teks brand mendorong switcher/hamburger keluar layar.
+       Tanpa cap vw arbitrer — biarkan flex menyusutkan teks (nav-brand sudah
+       min-width: 0); ellipsis hanya jaring pengaman di layar sangat sempit. */
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
