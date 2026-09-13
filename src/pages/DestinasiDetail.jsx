@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { usePublicDestinations } from '../hooks/useDestinations'
 import { mapsDirectionsUrl } from '../lib/tracking'
+import StructuredData from '../components/StructuredData'
 
 const PUSAT = { latitude: -6.5569, longitude: 107.4430, nama: 'Pusat Kota Purwakarta' }
 
@@ -215,6 +216,7 @@ function DestinasiDetail() {
 
   return (
     <section className="page-section detail-page">
+      <StructuredData dest={destination} />
       <div className="section-container">
         <Link to="/destinasi" className="detail-back">
           ← Kembali ke Destinasi

@@ -35,3 +35,9 @@ skills-lock.json
 
 # Supabase CLI temp files
 supabase/.temp/
+
+# Data lokal hasil scraping (berat, tidak untuk repo)
+__pycache__/
+scraaping.py
+*.xlsx
+foto_destinasi/
