@@ -3309,6 +3309,32 @@ textarea.adm-input {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+.adm-fasilitas-hapus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+.adm-fasilitas-hapus:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+.adm-fasilitas-tambah {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.adm-fasilitas-tambah .adm-input {
+  flex: 1;
+}
 .adm-form-actions {
   display: flex;
   justify-content: flex-end;

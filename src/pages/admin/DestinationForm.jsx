@@ -63,6 +63,7 @@ export default function DestinationForm() {
   const [loading, setLoading] = useState(Boolean(id))
   const [busy, setBusy] = useState(false)
   const [errors, setErrors] = useState({})
+  const [fasilitasKustom, setFasilitasKustom] = useState('')
 
   useEffect(() => {
     if (!id || !isSupabaseReady) return
@@ -93,6 +94,37 @@ export default function DestinationForm() {
   function set(field, nilai) {
     setForm((f) => ({ ...f, [field]: nilai }))
     setErrors((e) => ({ ...e, [field]: undefined }))
+  }
+
+  /* Kunci bawaan (camelCase) tidak ikut ditampilkan sebagai chip kustom */
+  const KUNCI_BAWAAN = new Set(FASILITAS.map((f) => f.key.toLowerCase()))
+  const kustomAktif = Object.keys(form.fasilitas || {}).filter(
+    (k) => form.fasilitas[k] && !KUNCI_BAWAAN.has(k.toLowerCase()),
+  )
+
+  function tambahFasilitas() {
+    const teks = fasilitasKustom.trim().replace(/\s+/g, ' ')
+    if (!teks) return
+    /* Cegah duplikat (case-insensitive) terhadap kunci & label bawaan
+       maupun fasilitas kustom yang sudah ada. */
+    const sudahAda = [
+      ...FASILITAS.flatMap((f) => [f.key, f.label]),
+      ...Object.keys(form.fasilitas || {}),
+    ].some((k) => k.toLowerCase() === teks.toLowerCase())
+    if (sudahAda) {
+      toast.error('Fasilitas itu sudah ada di daftar.')
+      return
+    }
+    /* Kunci = teks apa adanya — halaman publik menampilkan kunci tak-dikenal
+       sebagai label, jadi langsung tampil dengan nama yang benar. */
+    set('fasilitas', { ...(form.fasilitas || {}), [teks]: true })
+    setFasilitasKustom('')
+  }
+
+  function hapusFasilitas(kunci) {
+    const salinan = { ...(form.fasilitas || {}) }
+    delete salinan[kunci]
+    set('fasilitas', salinan)
   }
 
   function validasi() {
@@ -294,8 +326,35 @@ export default function DestinationForm() {
                 </button>
               )
             })}
+            {kustomAktif.map((k) => (
+              <span key={k} className="adm-fasilitas-chip aktif">
+                <span aria-hidden="true">✅</span> {k}
+                <button
+                  type="button"
+                  className="adm-fasilitas-hapus"
+                  onClick={() => hapusFasilitas(k)}
+                  aria-label={`Hapus fasilitas ${k}`}
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
           </div>
-          <small className="adm-muted">Klik untuk menandai fasilitas yang tersedia di lokasi.</small>
+          <div className="adm-fasilitas-tambah">
+            <input
+              className="adm-input"
+              value={fasilitasKustom}
+              onChange={(e) => setFasilitasKustom(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); tambahFasilitas() } }}
+              placeholder="Fasilitas lain? tulis di sini, mis. Gazebo"
+              maxLength={40}
+              aria-label="Tambah fasilitas kustom"
+            />
+            <button type="button" className="adm-btn adm-btn-ghost" onClick={tambahFasilitas} disabled={!fasilitasKustom.trim()}>
+              + Tambah
+            </button>
+          </div>
+          <small className="adm-muted">Klik chip untuk menandai fasilitas yang tersedia; tulis fasilitas lain di kolom tambah.</small>
         </div>
 
         <div className="adm-field adm-field-full">
