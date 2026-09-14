@@ -3275,6 +3275,40 @@ textarea.adm-input {
   font-weight: 600;
   color: var(--text-secondary);
 }
+
+/* ---------- Fasilitas toggle grid ---------- */
+.adm-fasilitas-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.adm-fasilitas-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.adm-fasilitas-chip:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--text-primary);
+}
+.adm-fasilitas-chip.aktif {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--primary);
+  color: var(--primary-light);
+}
+.adm-fasilitas-chip:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 .adm-form-actions {
   display: flex;
   justify-content: flex-end;

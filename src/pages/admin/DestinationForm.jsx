@@ -9,8 +9,43 @@ import ImageUploader from '../../components/admin/ImageUploader'
 const KOSONG = {
   nama: '', deskripsi: '', kategori: '', kecamatan: '', alamat: '',
   latitude: '', longitude: '', harga_tiket: '', jam_operasional: '',
-  telepon: '', rating: '', maps_url: '', galeri: [], storage_paths: [],
+  telepon: '', rating: '', maps_url: '', fasilitas: {},
+  galeri: [], storage_paths: [],
   meta_title: '', meta_description: '', is_published: true,
+}
+
+/* Daftar fasilitas yang dikenali halaman publik (icon + label).
+   Kuncinya wajib sama dengan `fasilitasLabels` di Destinasi.jsx &
+   DestinasiDetail.jsx supaya badge tampil dengan icon yang benar. */
+const FASILITAS = [
+  { key: 'toilet', icon: '🚻', label: 'Toilet' },
+  { key: 'mushola', icon: '🕌', label: 'Mushola' },
+  { key: 'parkir', icon: '🅿️', label: 'Parkir' },
+  { key: 'warung', icon: '🍜', label: 'Warung/Kafe' },
+  { key: 'wifi', icon: '📶', label: 'WiFi' },
+  { key: 'penginapan', icon: '🏨', label: 'Penginapan' },
+  { key: 'kolamRenang', icon: '🏊', label: 'Kolam Renang' },
+  { key: 'camping', icon: '⛺', label: 'Camping' },
+  { key: 'joggingTrack', icon: '🏃', label: 'Jogging Track' },
+  { key: 'flyingFox', icon: '🪂', label: 'Flying Fox' },
+  { key: 'areaBBQ', icon: '🔥', label: 'Area BBQ' },
+  { key: 'sewaPerahu', icon: '⛵', label: 'Sewa Perahu' },
+  { key: 'playground', icon: '🎠', label: 'Playground' },
+]
+
+/* Fasilitas di DB bisa tersimpan sebagai object ({toilet:true}) atau
+   array (['Toilet',...]) — samakan dulu ke object sebelum diedit. */
+function normalisasiFasilitas(nilai) {
+  if (!nilai) return {}
+  if (Array.isArray(nilai)) {
+    return Object.fromEntries(
+      nilai
+        .map((f) => (typeof f === 'string' ? f : f?.key || f?.label))
+        .filter(Boolean)
+        .map((k) => [k, true]),
+    )
+  }
+  return typeof nilai === 'object' ? { ...nilai } : {}
 }
 
 function buatSlug(nama) {
@@ -48,6 +83,7 @@ export default function DestinationForm() {
         }
         bersih.galeri = Array.isArray(data.galeri) ? data.galeri : []
         bersih.storage_paths = Array.isArray(data.storage_paths) ? data.storage_paths : []
+        bersih.fasilitas = normalisasiFasilitas(data.fasilitas)
         setForm(bersih)
       }
       setLoading(false)
@@ -95,6 +131,18 @@ export default function DestinationForm() {
     setBusy(true)
 
     try {
+      /* Fasilitas: gabungkan kunci yang dikenali UI dengan kunci lama/unknown
+         (mis. dari impor massal) yang masih bernilai truthy, supaya data
+         fasilitas yang sudah ada tidak hilang saat menyimpan. */
+      const dikenal = new Set(FASILITAS.map((f) => f.key))
+      const fasilitasLama = Object.fromEntries(
+        Object.entries(form.fasilitas || {}).filter(([k, v]) => v && !dikenal.has(k)),
+      )
+      const fasilitasBaru = FASILITAS.reduce((acc, f) => {
+        if (form.fasilitas?.[f.key]) acc[f.key] = true
+        return acc
+      }, {})
+
       const baris = {
         nama: String(form.nama || '').trim(),
         slug: String(form.slug || '').trim() || buatSlug(String(form.nama || '')),
@@ -109,6 +157,7 @@ export default function DestinationForm() {
         telepon: form.telepon || null,
         rating: form.rating ? Number(form.rating) : null,
         maps_url: form.maps_url || null,
+        fasilitas: { ...fasilitasLama, ...fasilitasBaru },
         galeri: Array.isArray(form.galeri) ? form.galeri : [],
         storage_paths: Array.isArray(form.storage_paths) ? form.storage_paths : [],
         meta_title: form.meta_title || null,
@@ -226,6 +275,27 @@ export default function DestinationForm() {
         <div className="adm-field adm-field-full">
           <label htmlFor="f-maps">URL Google Maps</label>
           <input id="f-maps" className="adm-input" value={form.maps_url || ''} onChange={(e) => set('maps_url', e.target.value)} />
+        </div>
+
+        <div className="adm-field adm-field-full">
+          <label>Fasilitas</label>
+          <div className="adm-fasilitas-grid">
+            {FASILITAS.map((f) => {
+              const aktif = Boolean(form.fasilitas?.[f.key])
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  className={`adm-fasilitas-chip ${aktif ? 'aktif' : ''}`}
+                  aria-pressed={aktif}
+                  onClick={() => set('fasilitas', { ...(form.fasilitas || {}), [f.key]: !aktif })}
+                >
+                  <span aria-hidden="true">{f.icon}</span> {f.label}
+                </button>
+              )
+            })}
+          </div>
+          <small className="adm-muted">Klik untuk menandai fasilitas yang tersedia di lokasi.</small>
         </div>
 
         <div className="adm-field adm-field-full">
